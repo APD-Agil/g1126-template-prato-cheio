@@ -11,6 +11,7 @@ Conecta doadores de alimentos excedentes a ONGs, antes que a comida se perca.
 - Henrique Osmar Adelino — @hosmaradelino
 - Otavio Santana Possenti — @otaviosantanna
 - Pedro Henrique Coppola — @pedrohenriquecoppola
+- Willian Vinicius Ramalho - @willianramalho
 
 ## Como rodar
 
