@@ -76,8 +76,31 @@ O principal desafio é garantir que essa conexão aconteça antes que os aliment
 
 
 ## Histórias de usuário
+
 | # | História (Como… quero… para…) | INVEST: o que falha |
 |---|---|---|
+| 1 | Como dono de restaurante (Doador), quero publicar uma doação com tipo, quantidade e validade mínima de 2h, para não perder tempo negociando por telefone e reduzir o risco de o alimento vencer parado na cozinha. | **falha** em Pequena → publicar dados básicos e anexar foto/geolocalização numa história só é grande demais; separada da história #6, que fica só com os 3 campos obrigatórios. |
+| 2 | Como coordenador de ONG, quero ver a lista de doações disponíveis ordenada pelo prazo de validade, para priorizar a retirada dos lotes que vencem primeiro e não perder alimento por atraso. | falha em Testável → falta definir o que é "próximo do vencimento" (ex.: menos de 1h) para o teste automatizado poder verificar a ordenação. |
+| 3 | Como coordenador de ONG, quero aceitar um lote com exclusividade garantida pelo sistema, para não chegar ao restaurante e descobrir que outra ONG já retirou a doação. | falha em Independente → depende da doação já estar publicada (história #1); sem dado semeado no banco não há lote para demonstrar a exclusividade isoladamente. |
+| 4 | Como voluntário entregador, quero ver o endereço do restaurante já formatado no card da doação aceita, para chegar ao local sem copiar o endereço para outro aplicativo de mapas. | falha em Estimável → spike de 2h para descobrir se existe endereço estruturado (rua/número/bairro) no cadastro do restaurante ou se é campo livre de texto. |
+| 5 | Como Marta (Coordenadora/Patrocinadora), quero ver o tempo médio entre publicação e aceite no painel, para decidir se o piloto está reduzindo o desperdício antes de escalar para outros bairros. | falha em Valiosa isoladamente → o painel só entrega decisão depois de ~30 dias de volume mínimo (linha de base do Objetivo de Impacto 1); antes disso é tela vazia. |
+| 6 | Como dono de restaurante (Doador), quero publicar uma doação apenas com tipo, quantidade e validade mínima de 2h, para que ela apareça imediatamente na lista de disponíveis das ONGs. | falha em Pequena → fatia 1 da história gigante; separada da foto/geolocalização, cobre só os campos testados em "recusa doação sem os campos obrigatórios". |
+| 7 | ★ Como coordenador de ONG, quero aceitar um lote disponível com exclusividade garantida pelo sistema, para não perder a doação numa disputa com outra ONG nem chegar ao restaurante para uma doação que já foi retirada. | falha em Testável → "exclusividade" só é verificável simulando duas requisições simultâneas para o mesmo lote; sem esse critério de concorrência explícito o teste não sabe o que afirmar. |
+| 8 | Como coordenador de ONG, quero confirmar o recebimento do lote retirado, para encerrar a pendência no sistema e permitir que a Marta meça quantas doações realmente chegaram ao destino. | falha em Negociável → a regra de quando o lote muda para CONCLUIDO foi inventada pelo grupo (Regra 3, origem Ausente); Marta ainda precisa ratificar se a confirmação é manual pela ONG ou automática por tempo. |
+
+**Por que ela (história #7):** é a única regra "Praticada" (não inventada) do caso — a exclusividade de aceite é o que diferencia a plataforma dos grupos de WhatsApp e evita o problema central do caso: duas ONGs disputando o mesmo lote.
+
+**O que ficou fora da fatia:**
+- Confirmação de retirada e baixa do lote (fatia #8).
+- Geolocalização em tempo real dos voluntários entregadores.
+- Login completo (mantido o token/link mágico do Conflito 1).
+- Foto e endereço estruturado na publicação (história #1/#4).
+
+**Por quê:**
+- Confirmação de retirada fora: a Regra 3 tem origem "Ausente" — foi inventada pelo grupo, e Marta ainda não ratificou se o encerramento é manual ou automático; implementar antes da ratificação é risco de retrabalho.
+- Geolocalização fora: o Objetivo de Impacto 1 (tempo médio de coleta) ainda não tem linha de base medida nos primeiros 30 dias; otimizar sem medir é risco de esforço jogado fora.
+- Login completo fora: decisão já registrada no Conflito 1 ("adiar com data") — o link mágico é suficiente para o piloto; login completo só se a taxa de erro do link se mostrar um problema.
+- Foto/endereço estruturado fora: ainda não sabemos (spike da história #4) se o campo de endereço do restaurante é estruturado — é medição, não preguiça.
 
 ## Critérios de aceite
 **História X** — Dado … Quando … Então …
@@ -95,4 +118,7 @@ O principal desafio é garantir que essa conexão aconteça antes que os aliment
 - **Riscos e limitações:**
 
 ## Uso de IA
-O que geramos com IA, o que verificamos e o que alteramos.
+- **História #3 (aceitar com exclusividade):** a IA gerou primeiro "Como usuário, quero aceitar a doação para ajudar as pessoas" — papel genérico (não é stakeholder do mapa da Aula 2) e "para" que só repete o "quero". O grupo trocou o papel por "coordenador de ONG" e o "para" pela perda concreta de chegar ao local com a doação já levada. Regra que a IA inventou: sugeriu uma "trava de 5 minutos" antes de permitir reaceite — esse prazo não existe no caso; a decisão foi manter a exclusividade imediata da Regra 2, e quem ratifica qualquer trava adicional é o grupo com a Marta, não a IA.
+- **História #4 (endereço para o voluntário):** a IA sugeriu integrar direto com a API do Google Maps. O grupo trocou por um spike de 2h para primeiro checar se o cadastro do restaurante já guarda endereço estruturado, porque o caso não descreve esse campo. Regra inventada pela IA: assumiu que o endereço já vem estruturado; quem decide, após o spike, é o grupo.
+- **História #8 (confirmar retirada):** a IA sugeriu automatizar a confirmação via geolocalização do voluntário entregador. Isso ignora que o caso adia explicitamente o refinamento de geolocalização dos voluntários ("ficam apenas sendo monitorados neste primeiro momento"). O grupo manteve a confirmação manual pela ONG; quem decide sobre acrescentar geolocalização depois é a Marta, dona da métrica de tempo de coleta.
+- **Restrição que sumiu (erro mais caro):** na primeira versão da história #1, a IA não mencionou a validade mínima de 2h (Regra 1) nem o recorte de "um bairro" do piloto (Conflito 2) — as duas são regras de negócio centrais do caso e tiveram que ser reincorporadas manualmente.
