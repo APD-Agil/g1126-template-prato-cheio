@@ -103,19 +103,56 @@ O principal desafio é garantir que essa conexão aconteça antes que os aliment
 - Foto/endereço estruturado fora: ainda não sabemos (spike da história #4) se o campo de endereço do restaurante é estruturado — é medição, não preguiça.
 
 ## Critérios de aceite
-**História X** — Dado … Quando … Então …
+
+**História 7 ★ (Zero) — Como coordenador de ONG, quero aceitar um lote disponível com exclusividade garantida pelo sistema...**
+* **Cenário 1: Aceite bem-sucedido**
+  * **Dado** que um lote de alimento está publicado e consta com o status DISPONÍVEL;
+  * **Quando** o coordenador da ONG clica no botão "Aceitar Doação";
+  * **Então** o lote é removido da listagem pública e o sistema exibe a confirmação de reserva exclusiva para essa ONG.
+* **Cenário 2: Disputa de concorrência (Caminho proibido)**
+  * **Dado** que um lote está DISPONÍVEL e dois coordenadores de ONGs diferentes estão com a tela de aceite aberta;
+  * **Quando** ambos clicam em "Aceitar Doação" exatamente ao mesmo tempo;
+  * **Então** o sistema exibe a confirmação de sucesso para apenas um deles e a mensagem de erro "Este lote já foi reservado por outra ONG" para o outro.
+
+**História 6 — Como dono de restaurante (Doador), quero publicar uma doação apenas com tipo, quantidade e validade mínima de 2h...**
+* **Cenário 1: Publicação válida**
+  * **Dado** que o formulário de doação está vazio e pronto para preenchimento;
+  * **Quando** o doador preenche os campos obrigatórios com uma validade de 3 horas à frente e envia;
+  * **Então** o sistema salva a doação e ela aparece imediatamente na lista de lotes DISPONÍVEIS para as ONGs.
+* **Cenário 2: Validade inferior à permitida (Caminho proibido)**
+  * **Dado** que o formulário de doação está preenchido;
+  * **Quando** o doador informa uma validade de apenas 1 hora à frente do horário atual e tenta enviar;
+  * **Então** o sistema não salva a doação e exibe o erro "O prazo de validade deve ser de no mínimo 2 horas a partir de agora".
+
+**História 8 — Como coordenador de ONG, quero confirmar o recebimento do lote retirado...**
+* **Cenário 1: Encerramento de pendência**
+  * **Dado** que existe uma doação com o status RESERVADA vinculada à ONG atual;
+  * **Quando** o coordenador clica no botão "Confirmar Retirada";
+  * **Então** a doação é movida para o histórico com o status CONCLUÍDO e desaparece da tela de pendências ativas.
 
 ## Riscos
+
+Escala de probabilidade e impacto utilizada: Alta / Média / Baixa.
+
 | Risco | Probabilidade | Impacto | Mitigação |
 |---|---|---|---|
+| A janela de apenas 1 hora para retirada da doação ser impraticável no trânsito para os voluntários das ONGs. | Alta | Alta | Até 01/09, o Pedro entrevista os coordenadores de duas ONGs para validar o tempo real de deslocamento e documenta no repositório. |
+| O uso do link mágico (sem senha) gerar cadastros inválidos ou dificultar a auditoria exigida pela Vigilância Sanitária. | Média | Alta | Até 02/09, o Otávio implementa a geração do token atrelado estritamente ao telefone e testa se o fluxo bloqueia acessos anônimos no ambiente de homologação. |
 
 ## Hipótese e experimento
 
+Acreditamos que os donos de restaurantes estão dispostos a cadastrar as doações ativamente por conta própria, desde que não precisem criar senhas complexas e o formulário exija apenas três campos básicos.
+Saberemos que estávamos errados se a média de doações publicadas por restaurante ativo for menor do que 2 vezes por semana até o dia 30/09.
+Como medimos: Contagem direta no banco de dados de doações criadas e vinculadas aos IDs de doadores cadastrados.
+
 ## Decisão de análise
-- **Problema:**
-- **Alternativas:**
-- **Decisão e justificativa:**
-- **Riscos e limitações:**
+
+* **Problema:** Definir a fronteira da "Fatia 1" (Walking Skeleton) limitando o escopo de publicação para conseguir entregar e testar o fluxo crítico de aceite exclusivo a tempo.
+* **Alternativas:**
+  * *Alternativa A:* Manter o upload de foto do alimento e a integração com API de geolocalização. Ganha-se mais segurança e previsibilidade para a ONG; perde-se uma semana de desenvolvimento lidando com armazenamento de imagens e mapas.
+  * *Alternativa B:* Cortar fotos e mapas da primeira entrega, publicando estritamente tipo, quantidade e validade. Ganha-se velocidade para testar o gargalo da exclusividade do aceite (História 7) logo na iteração 1; perde-se a verificação visual prévia da comida.
+* **Decisão e justificativa:** Escolhemos a *Alternativa B*. O objetivo de impacto central para validar o piloto é "reduzir o tempo médio de coleta". A mecânica de aceite exclusivo é o que diferencia o sistema do WhatsApp. Validar esse núcleo rápido é mais importante do que refinar o card com fotos.
+* **Riscos e limitações:** O custo dessa decisão é que os voluntários dependerão de endereços preenchidos em texto livre pelos doadores (já que a História 4 ficou de fora). Isso aumenta o risco de atrasos na primeira semana por dificuldades logísticas de navegação.
 
 ## Uso de IA
 - **História #3 (aceitar com exclusividade):** a IA gerou primeiro "Como usuário, quero aceitar a doação para ajudar as pessoas" — papel genérico (não é stakeholder do mapa da Aula 2) e "para" que só repete o "quero". O grupo trocou o papel por "coordenador de ONG" e o "para" pela perda concreta de chegar ao local com a doação já levada. Regra que a IA inventou: sugeriu uma "trava de 5 minutos" antes de permitir reaceite — esse prazo não existe no caso; a decisão foi manter a exclusividade imediata da Regra 2, e quem ratifica qualquer trava adicional é o grupo com a Marta, não a IA.
