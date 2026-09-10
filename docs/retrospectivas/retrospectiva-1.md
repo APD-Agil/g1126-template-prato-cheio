@@ -33,13 +33,13 @@ Distribuam 100 pontos entre os integrantes conforme a contribuição desta itera
 
 | Integrante | Pontos | O que fez de mais relevante |
 |---|:--:|---|
-| Davi Rudinei Peres (@daavizeira) | [PREENCHER] | [PREENCHER] |
-| Henrique Osmar Adelino (@hosmaradelino) | [PREENCHER] | [PREENCHER] |
-| Otavio Santana Possenti (@otaviosantanna) | [PREENCHER] | [PREENCHER] |
-| Pedro Henrique Coppola (@pedrohenriquecoppola) | [PREENCHER] | [PREENCHER] |
-| Willian Vinicius Ramalho (@willianramalho) | [PREENCHER] | [PREENCHER] |
+| Henrique Osmar Adelino (@hosmaradelino) | 20 | Estrutura geral do projeto na fase inicial (repositório, CI, fluxo de PR) e cobriu a parte do Pedro em um dia que ele faltou |
+| Pedro Henrique Coppola (@pedrohenriquecoppola) | 20 | Aulas 2 e 3: histórias de usuário, escolha da história zero e apoio no mapa de stakeholders/regras de negócio |
+| Willian Vinicius Ramalho (@willianramalho) | 20 | Ajudou fortemente na Aula 2: mapa de stakeholders, objetivos de impacto, regras de negócio e conflitos de prioridade |
+| Davi Rudinei Peres (@daavizeira) | 20 | Entrega da Aula 4: critérios de aceite, riscos e hipótese |
+| Otavio Santana Possenti (@otaviosantanna) | 20 | Implementação do walking skeleton (código: regras de negócio, acesso a dados, testes) |
 
 **Total: 100**
 
-> ⚠️ Esta tabela precisa ser preenchida pelo grupo com números reais antes da entrega —
-> a autoavaliação orienta as perguntas da defesa individual na Aula 5.
+> Assinaturas: cada integrante deve confirmar/ajustar os pontos acima antes da entrega
+> (Teams, Aula 5) — a autoavaliação orienta as perguntas da defesa individual.
