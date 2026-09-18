@@ -25,6 +25,8 @@ Regras habilitadas no ruleset (target branch: `main`, via "Include default branc
 
 ![Regras do ruleset: Require a pull request before merging e Require status checks to pass marcados](protecao-main-ruleset-2-regras.jpg)
 
+![Configuração expandida de "Require a pull request before merging": Required approvals = 1](protecao-main-ruleset-3-aprovacoes.jpg)
+
 ## Como isso passa a valer
 
 A partir desta entrega, todo merge na `main` exige:
