@@ -82,3 +82,40 @@ O que precisa continuar igual depois da migração, e o que mostra isso. Tudo é
 | A aplicação sobe com o banco novo | O passo "Verificar se a aplicação sobe" do CI (`curl --fail http://localhost:3000/api/saude`) verde |
 | Doações existentes não se perdem (se houver dados reais quando a migração for feita) | `SELECT status, count(*) FROM doacoes GROUP BY status;` antes (SQLite) e depois (PostgreSQL), com o mesmo resultado |
 
+---
+
+## Revisão — 08/10/2026
+
+**O que mudou no contexto:** a Vigilância Sanitária passará a solicitar uma cópia do banco de dados todo mês. Até aqui o banco só tinha um consumidor, o próprio sistema. Agora há um consumidor externo, recorrente e com poder de veto.
+
+**Revisitamos a alternativa 1 (ficar em SQLite).** Ela é a que mais ganha com a mudança, porque a cópia seria um único arquivo, que a Vigilância abriria com qualquer leitor de SQLite. Mesmo assim, ela continua perdendo, por dois motivos:
+
+- Copiar `dados.sqlite` com o servidor gravando pode gerar uma cópia corrompida, a menos que se use `VACUUM INTO` com o sistema em pausa.
+- O motivo central da migração fica *mais forte*: se o disco do servidor for apagado, não há mais o que copiar, e o histórico mensal exigido se perde.
+
+**Resultado: a decisão continua.** PostgreSQL 16, em contêiner no desenvolvimento e no CI, com conexão por `DATABASE_URL`.
+
+**O que da decisão original continua valendo:**
+- o PostgreSQL 16 e o contêiner no desenvolvimento e no CI;
+- o `src/db.js` como único arquivo que conhece o banco;
+- todo o critério de validação acima.
+
+**O que cai:** a frase "onde o banco do piloto vai morar fica fora deste ADR" deixa de ser verdade por inteiro. O banco do piloto continua livre (servidor com contêiner ou serviço gerenciado), mas agora precisa cumprir duas condições:
+
+- **(a)** ser persistente, nunca o contêiner no notebook de um integrante;
+- **(b)** aceitar conexão externa para que o grupo rode `pg_dump` com a `DATABASE_URL`.
+
+**O que se acrescenta (a executar na Unidade 3):**
+- Cópia mensal em dois formatos:
+  - `pg_dump --no-owner --format=plain "$DATABASE_URL" > copia-AAAA-MM.sql`, a cópia completa e restaurável;
+  - `psql "$DATABASE_URL" -c "\copy doacoes TO 'doacoes-AAAA-MM.csv' CSV HEADER"`, porque a Vigilância provavelmente não tem PostgreSQL para abrir o `.sql`.
+- Os dois comandos viram o script `npm run db:copia`, documentado no README.
+- O modelo de dados precisa guardar o que a cópia deve provar. Hoje a tabela `doacoes` não registra **quem publicou** (Conflito 1) nem **quando** o lote foi aceito ou concluído, e a cópia mensal só mostraria o estado atual. O diagrama de dados foi atualizado com as colunas planejadas e as divergências com o `src/db.js` estão declaradas em `docs/diagramas/dados.md`.
+
+**Novas consequências negativas, e quem paga:**
+- **Uma tarefa recorrente, todo mês, sem prazo de término.** Quem paga é o integrante designado como responsável pela cópia mensal (a definir pelo grupo antes do piloto), que gasta o tempo de gerar, conferir e enviar os arquivos.
+- **Dado sai do sistema.** O nome das ONGs e, quando existir, o contato do doador (o telefone vinculado ao link mágico) passam a circular fora do banco. Quem corre o risco são as ONGs e os doadores. Por isso o CSV leva só as colunas que a Vigilância precisa conferir.
+
+**Novo critério de validação:** restaurar a cópia num contêiner vazio (`psql -f copia-AAAA-MM.sql`) e conferir que `SELECT count(*) FROM doacoes;` dá o mesmo número que no banco do piloto no momento da cópia.
+
+**Rastreabilidade acrescentada:** stakeholder Vigilância Sanitária ("pode vetar o app", `docs/analise.md`) e Risco 2 (auditoria exigida pela Vigilância).
