@@ -55,11 +55,11 @@ V = verificar (projeto × especificado) · C = cobrir o caso (validar). Cada lin
 | 9 | C | A exigência da Vigilância de saber quem publicou cada doação (Conflito 1) tem uma coluna no modelo de dados? | `docs/analise.md` → Conflito 1 × `docs/diagramas/dados.md` | só no modelo planejado (`doador`); no `src/db.js` atual, não |
 
 ### Revisão interna (fragilidades)
-Revisor: **[nome e @ do integrante que não escreveu este checklist]**, em comentário no PR **[link do PR]**.
+Revisor: **Pedro Henrique Coppola (@pedrohenriquecoppola)**, em comentário no [PR #5](https://github.com/APD-Agil/g1126-template-prato-cheio/pull/5).
 
 | # | Fragilidade apontada pelo revisor (copiada do PR) | Resposta da equipe |
 |:--:|---|---|
-| 1 | [copiar aqui o comentário do revisor] | [corrigida: link do commit] / [aceita como limitação: motivo e plano] / [contestada: motivo] |
-| 2 | [copiar aqui o comentário do revisor] | [corrigida: link do commit] / [aceita como limitação: motivo e plano] / [contestada: motivo] |
+| 1 | **Regra sem teste.** O Cenário 2 da História 7 ★ (duas ONGs aceitando o mesmo lote ao mesmo tempo) não tem teste: o teste de disputa em `tests/doacoes.test.js` faz as duas tentativas uma depois da outra. Se a migração trocar o `UPDATE` condicional por "ler e depois gravar", os 6 testes continuam verdes e o critério de validação do ADR 0001 aprova uma migração que quebrou a exclusividade. | **Aceita como limitação.** O revisor tem razão, e por isso o critério 7 já está como "não". Não corrigimos agora porque este PR só mexe em documentação e a troca de banco é na Unidade 3. **Plano:** antes de trocar o banco, escrever o teste que manda os dois aceites ao mesmo tempo (RNF1). A troca de banco só é aprovada se esse teste passar (`docs/retrospectivas/2.md`, Próximos passos). |
+| 2 | **Decisão sem dono.** A Revisão do ADR 0001 cria uma tarefa mensal (gerar e enviar a cópia do banco à Vigilância) sem responsável definido e sem dizer onde o banco do piloto vai ficar. A Vigilância pode vetar o app (`docs/analise.md`), e as colunas que a cópia precisa mostrar (`doador`, `aceita_em`) ainda não existem no `src/db.js` (`docs/diagramas/dados.md`, divergência 4). | **Aceita como limitação.** O revisor tem razão. Por enquanto não há cópia a mandar, porque o piloto ainda não começou. **Plano:** antes do início do piloto, escolher quem é o responsável pela cópia mensal e onde o banco vai ficar (persistente e acessível para `pg_dump`). As colunas entram no banco junto com a migração da Unidade 3 (`docs/retrospectivas/2.md`, Próximos passos). |
 
 ## Uso de IA
