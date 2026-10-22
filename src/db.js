@@ -41,13 +41,22 @@ export async function migrar() {
       validade    TEXT NOT NULL,
       status      TEXT NOT NULL DEFAULT 'disponivel',
       ong         TEXT,
+      aceita_em   TEXT,
       criada_em   TEXT NOT NULL DEFAULT (datetime('now'))
     )
   `);
+
+  const colunas = conexao().prepare('PRAGMA table_info(doacoes)').all();
+  if (!colunas.some((coluna) => coluna.name === 'aceita_em')) {
+    conexao().exec('ALTER TABLE doacoes ADD COLUMN aceita_em TEXT');
+  }
 }
 
 /** Apaga todos os dados. Usado pelos testes. */
 export async function limparBanco() {
+  if (ARQUIVO !== ':memory:') {
+    throw new Error('Limpeza recusada: limparBanco só pode ser usado com SQLite em memória');
+  }
   conexao().exec('DELETE FROM doacoes');
 }
 

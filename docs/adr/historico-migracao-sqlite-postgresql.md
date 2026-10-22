@@ -1,7 +1,7 @@
 # ADR 0001 — Migrar o banco de SQLite para PostgreSQL 16, em contêiner no desenvolvimento e no CI
 
 - **Data:** 08/10/2026
-- **Status:** aceito
+- **Status:** substituído por ADR 0001
 - **Executada em:** Unidade 3 (refatoração registrada em `docs/refatoracoes.md`, Refatoração 1)
 
 ## Contexto

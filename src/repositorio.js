@@ -26,10 +26,19 @@ export async function buscarPorId(id) {
 
 export async function aceitar(id, ong) {
   const { rows } = await query(
-    `UPDATE doacoes SET status = 'aceita', ong = ?
+    `UPDATE doacoes SET status = 'aceita', ong = ?, aceita_em = datetime('now')
      WHERE id = ? AND status = 'disponivel'
      RETURNING *`,
     [ong, id]
   );
   return rows[0];
+}
+
+export async function contarAceitasNoMes(mes) {
+  const { rows } = await query(
+    `SELECT COUNT(*) AS total FROM doacoes
+     WHERE status = 'aceita' AND substr(aceita_em, 1, 7) = ?`,
+    [mes]
+  );
+  return rows[0].total;
 }
