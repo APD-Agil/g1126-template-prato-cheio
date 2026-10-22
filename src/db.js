@@ -1,5 +1,3 @@
-// Conexão com o banco. Já vem pronto — não precisa mexer agora.
-//
 // UNIDADE 1: SQLite, embutido no Node (módulo `node:sqlite`) — nada para instalar.
 // UNIDADE 3: este arquivo será refatorado para PostgreSQL. A interface abaixo
 //            (`query` devolvendo `{ rows }`) foi desenhada para que a troca fique

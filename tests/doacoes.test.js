@@ -8,6 +8,11 @@ const app = criarApp();
 // Doações com validade sempre no futuro (>= 2h à frente), para não depender
 // da data em que os testes rodam nem violar a Regra 1 do docs/analise.md.
 const daquiA = (horas) => new Date(Date.now() + horas * 60 * 60 * 1000).toISOString();
+const daquiAEmDatetimeLocal = (horas) => {
+  const data = new Date(Date.now() + horas * 60 * 60 * 1000);
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${data.getFullYear()}-${pad(data.getMonth() + 1)}-${pad(data.getDate())}T${pad(data.getHours())}:${pad(data.getMinutes())}`;
+};
 
 // Este teste já passa e não depende do banco:
 // prova que a aplicação sobe e que o CI está funcionando.
@@ -50,6 +55,17 @@ describe('publicar e listar doações', () => {
     expect(res.body).toHaveLength(1);
     expect(res.body[0].tipo).toBe('Sopa');
     expect(res.body[0].status).toBe('disponivel');
+  });
+
+  it('aceita validade no mesmo formato datetime-local enviado pela tela', async () => {
+    const validadeLocal = daquiAEmDatetimeLocal(3);
+
+    const post = await request(app)
+      .post('/api/doacoes')
+      .send({ tipo: 'Sopa', quantidade: '12 porções', validade: validadeLocal });
+
+    expect(post.status).toBe(201);
+    expect(post.body.validade).toBe(validadeLocal);
   });
 
   // Dado que o formulário está preenchido

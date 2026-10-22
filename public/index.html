@@ -26,13 +26,117 @@
     <input id="quantidade" placeholder="Ex.: 10 porções">
     <label for="validade">Validade / retirar até (mín. 2h a partir de agora)</label>
     <input id="validade" type="datetime-local">
+    <small id="ajuda-validade"></small>
     <button id="publicar">Publicar</button>
+    <p id="mensagem" aria-live="polite"></p>
   </fieldset>
 
   <h2>Doações disponíveis</h2>
+  <button id="atualizar-lista" type="button">Atualizar lista</button>
   <ul id="lista"></ul>
 
   <script>
+    const DUAS_HORAS_EM_MS = 2 * 60 * 60 * 1000;
+
+    function parseDatetimeLocal(valor) {
+      const match = String(valor).match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/);
+      if (!match) return null;
+
+      const [, ano, mes, dia, hora, minuto] = match;
+      const data = new Date(
+        Number(ano),
+        Number(mes) - 1,
+        Number(dia),
+        Number(hora),
+        Number(minuto),
+        0,
+        0
+      );
+
+      // Garante que a data criada bate com os mesmos componentes (evita datas inválidas).
+      if (
+        data.getFullYear() !== Number(ano)
+        || data.getMonth() !== Number(mes) - 1
+        || data.getDate() !== Number(dia)
+        || data.getHours() !== Number(hora)
+        || data.getMinutes() !== Number(minuto)
+      ) {
+        return null;
+      }
+
+      return data;
+    }
+
+    function calcularMinimoValidade() {
+      // O campo datetime-local não tem segundos; valida na mesma precisão (minuto).
+      const referencia = new Date();
+      referencia.setSeconds(0, 0);
+      const minimo = new Date(referencia.getTime() + DUAS_HORAS_EM_MS);
+      return minimo;
+    }
+
+    function formatarParaExibicaoISO(valor) {
+      if (!valor) return '';
+
+      // Já está no formato YYYY-MM-DDTHH:mm
+      if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(valor)) {
+        return valor;
+      }
+
+      const data = new Date(valor);
+      if (Number.isNaN(data.getTime())) {
+        return String(valor);
+      }
+
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${data.getFullYear()}-${pad(data.getMonth() + 1)}-${pad(data.getDate())}T${pad(data.getHours())}:${pad(data.getMinutes())}`;
+    }
+
+    function separarDataHora(valor) {
+      const iso = formatarParaExibicaoISO(valor);
+      const [dataISO, hora = ''] = iso.split('T');
+      const partesData = dataISO.split('-');
+
+      if (partesData.length !== 3) {
+        return { data: dataISO, hora };
+      }
+
+      const [ano, mes, dia] = partesData;
+      return { data: `${dia}/${mes}/${ano}`, hora };
+    }
+
+    function formatarDatetimeLocal(data) {
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${data.getFullYear()}-${pad(data.getMonth() + 1)}-${pad(data.getDate())}T${pad(data.getHours())}:${pad(data.getMinutes())}`;
+    }
+
+    function montarDiagnosticoValidade(validadeLocal, dataValidade, minimo) {
+      const agora = new Date();
+      const validadeTexto = dataValidade ? formatarDatetimeLocal(dataValidade) : 'invalida';
+      const minimoTexto = minimo ? formatarDatetimeLocal(minimo) : 'n/a';
+      const agoraTexto = formatarDatetimeLocal(agora);
+      const diferencaMinutos = dataValidade
+        ? Math.floor((dataValidade.getTime() - minimo.getTime()) / 60000)
+        : 'n/a';
+
+      return `Diag -> digitada: ${validadeLocal} | parse: ${validadeTexto} | agora: ${agoraTexto} | minimo(2h): ${minimoTexto} | diferenca(min): ${diferencaMinutos}`;
+    }
+
+    function configurarMinimoValidade() {
+      const inputValidade = document.getElementById('validade');
+      const ajudaValidade = document.getElementById('ajuda-validade');
+      const minimo = calcularMinimoValidade();
+      const minimoFormatado = formatarDatetimeLocal(minimo);
+      inputValidade.min = minimoFormatado;
+      ajudaValidade.textContent = `Escolha uma data/hora a partir de ${minimo.toLocaleString('pt-BR')}.`;
+    }
+
+    function mostrarMensagem(texto, tipo = 'info') {
+      const mensagem = document.getElementById('mensagem');
+      mensagem.textContent = texto;
+      mensagem.style.color = tipo === 'erro' ? '#b00020' : '#0f5132';
+    }
+
     async function carregar() {
       const res = await fetch('/api/doacoes');
       const doacoes = await res.json();
@@ -42,7 +146,8 @@
         : '<li>Nenhuma doação disponível.</li>';
       for (const d of doacoes) {
         const li = document.createElement('li');
-        li.textContent = `${d.tipo} — ${d.quantidade} (até ${d.validade}) `;
+        const validadeFormatada = separarDataHora(d.validade);
+        li.textContent = `${d.tipo} — ${d.quantidade} (até ${validadeFormatada.data} ${validadeFormatada.hora}) `;
         const botao = document.createElement('button');
         botao.textContent = 'Aceitar';
         botao.onclick = async () => {
@@ -58,20 +163,85 @@
       }
     }
 
+    async function atualizarListaComFeedback() {
+      try {
+        await carregar();
+      } catch (erro) {
+        mostrarMensagem('Falha ao atualizar a lista de doacoes. Tente novamente.', 'erro');
+      }
+    }
+
     document.getElementById('publicar').onclick = async () => {
-      await fetch('/api/doacoes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tipo: document.getElementById('tipo').value,
-          quantidade: document.getElementById('quantidade').value,
-          validade: document.getElementById('validade').value
-        })
-      });
-      carregar();
+      const botao = document.getElementById('publicar');
+      const tipo = document.getElementById('tipo').value.trim();
+      const quantidade = document.getElementById('quantidade').value.trim();
+      const validadeLocal = document.getElementById('validade').value;
+
+      if (!tipo || !quantidade || !validadeLocal) {
+        mostrarMensagem('Preencha tipo, quantidade e validade antes de publicar.', 'erro');
+        return;
+      }
+
+      const dataValidade = parseDatetimeLocal(validadeLocal);
+      if (!dataValidade) {
+        const minimo = calcularMinimoValidade();
+        const diagnostico = montarDiagnosticoValidade(validadeLocal, dataValidade, minimo);
+        mostrarMensagem(`Validade inválida. Use o formato de data e hora do campo. ${diagnostico}`, 'erro');
+        return;
+      }
+
+      const minimo = calcularMinimoValidade();
+      if (dataValidade.getTime() < minimo.getTime()) {
+        const diagnostico = montarDiagnosticoValidade(validadeLocal, dataValidade, minimo);
+        mostrarMensagem(`A validade deve ser no minimo 2 horas a partir de agora. ${diagnostico}`, 'erro');
+        return;
+      }
+
+      botao.disabled = true;
+      mostrarMensagem('Publicando...');
+
+      try {
+        // Envia o valor local do datetime-local para preservar a hora digitada.
+        const validadeEnviada = validadeLocal;
+        const res = await fetch('/api/doacoes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tipo, quantidade, validade: validadeEnviada })
+        });
+
+        if (!res.ok) {
+          const erro = await res.json().catch(() => ({}));
+          throw new Error(erro.erro || 'Não foi possível publicar a doação.');
+        }
+
+        const criada = await res.json();
+        const informada = separarDataHora(validadeLocal);
+        const enviada = separarDataHora(validadeEnviada);
+        const registrada = separarDataHora(criada.validade);
+        mostrarMensagem(
+          `Salva com ID ${criada.id}. Informada -> Data: ${informada.data} | Hora: ${informada.hora} | Enviada -> Data: ${enviada.data} | Hora: ${enviada.hora} | Registrada -> Data: ${registrada.data} | Hora: ${registrada.hora}`
+        );
+        document.getElementById('tipo').value = '';
+        document.getElementById('quantidade').value = '';
+        document.getElementById('validade').value = '';
+        configurarMinimoValidade();
+        try {
+          await carregar();
+        } catch (erroAtualizacao) {
+          mostrarMensagem(`Doacao salva com ID ${criada.id}, mas houve falha ao atualizar a lista. Recarregue a pagina.`, 'erro');
+        }
+      } catch (erro) {
+        const minimo = calcularMinimoValidade();
+        const diagnostico = montarDiagnosticoValidade(validadeLocal, dataValidade, minimo);
+        mostrarMensagem(`${erro.message} ${diagnostico}`, 'erro');
+      } finally {
+        botao.disabled = false;
+      }
     };
 
-    carregar();
+    document.getElementById('atualizar-lista').onclick = atualizarListaComFeedback;
+    configurarMinimoValidade();
+    atualizarListaComFeedback();
   </script>
 </body>
 </html>

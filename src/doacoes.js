@@ -4,6 +4,48 @@ import * as repo from './repositorio.js';
 
 const DUAS_HORAS_EM_MS = 2 * 60 * 60 * 1000;
 
+function parseValidade(valor) {
+  if (typeof valor !== 'string') {
+    return null;
+  }
+
+  // Formato usado pelo frontend: YYYY-MM-DDTHH:mm (sem fuso explícito).
+  const localMatch = valor.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/);
+  if (localMatch) {
+    const [, ano, mes, dia, hora, minuto] = localMatch;
+    const dataLocal = new Date(
+      Number(ano),
+      Number(mes) - 1,
+      Number(dia),
+      Number(hora),
+      Number(minuto),
+      0,
+      0
+    );
+
+    // Revalida os componentes para barrar datas inválidas (ex.: 2026-02-31T10:00).
+    if (
+      dataLocal.getFullYear() === Number(ano)
+      && dataLocal.getMonth() === Number(mes) - 1
+      && dataLocal.getDate() === Number(dia)
+      && dataLocal.getHours() === Number(hora)
+      && dataLocal.getMinutes() === Number(minuto)
+    ) {
+      return dataLocal;
+    }
+
+    return null;
+  }
+
+  // Compatibilidade com entradas ISO completas usadas em testes/API.
+  const dataISO = new Date(valor);
+  if (!Number.isNaN(dataISO.getTime())) {
+    return dataISO;
+  }
+
+  return null;
+}
+
 // História 6 — "um doador publica uma doação" (fatia mínima: tipo, quantidade e validade).
 // Regra 1 (docs/analise.md): a validade deve ter no mínimo 2 horas a partir de agora.
 export async function criarDoacao({ tipo, quantidade, validade }) {
@@ -11,11 +53,15 @@ export async function criarDoacao({ tipo, quantidade, validade }) {
     throw new Error('Os campos tipo, quantidade e validade são obrigatórios');
   }
 
-  const dataValidade = new Date(validade);
-  if (Number.isNaN(dataValidade.getTime())) {
+  const dataValidade = parseValidade(validade);
+  if (!dataValidade) {
     throw new Error('Validade inválida');
   }
-  if (dataValidade.getTime() - Date.now() < DUAS_HORAS_EM_MS) {
+  // O frontend envia no formato YYYY-MM-DDTHH:mm (sem segundos);
+  // a validação usa a mesma precisão para evitar inconsistência de borda.
+  const agora = new Date();
+  agora.setSeconds(0, 0);
+  if (dataValidade.getTime() - agora.getTime() < DUAS_HORAS_EM_MS) {
     throw new Error('O prazo de validade deve ser de no mínimo 2 horas a partir de agora');
   }
 
