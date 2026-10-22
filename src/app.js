@@ -33,5 +33,14 @@ export function criarApp() {
     }
   });
 
+  app.get('/api/relatorios/doacoes-aceitas', async (req, res) => {
+    try {
+      const mes = req.query.mes;
+      res.json({ mes, total: await doacoes.contarAceitasNoMes(mes) });
+    } catch (erro) {
+      res.status(400).json({ erro: erro.message });
+    }
+  });
+
   return app;
 }

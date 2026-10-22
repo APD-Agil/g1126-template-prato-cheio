@@ -44,3 +44,11 @@ export async function aceitar(id, ong) {
 
   return atualizada;
 }
+
+export async function contarAceitasNoMes(mes) {
+  if (typeof mes !== 'string' || !/^\d{4}-(0[1-9]|1[0-2])$/.test(mes)) {
+    throw new Error('Informe o mês no formato AAAA-MM');
+  }
+
+  return repo.contarAceitasNoMes(mes);
+}

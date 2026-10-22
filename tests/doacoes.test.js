@@ -107,18 +107,42 @@ describe('aceitar uma doação', () => {
     expect(res.body).toHaveLength(0);
   });
 
-  // Dado que um lote já foi aceito por uma ONG
-  // Quando outra ONG tenta aceitar o mesmo lote
-  // Então o sistema recusa com a mensagem de disputa (Regra 2 / Cenário 2 da História 7)
-  it('recusa aceitar uma doação que já foi aceita por outra ONG', async () => {
+  // Dado que um lote está disponível
+  // Quando duas ONGs tentam aceitar o mesmo lote simultaneamente
+  // Então exatamente uma consegue reservar e a outra recebe conflito
+  it('permite apenas um aceite quando duas ONGs disputam o lote simultaneamente', async () => {
     const id = await publicarDoacao();
+
+    const respostas = await Promise.all([
+      request(app).post(`/api/doacoes/${id}/aceitar`).send({ ong: 'ONG Esperança' }),
+      request(app).post(`/api/doacoes/${id}/aceitar`).send({ ong: 'ONG Mãos Solidárias' })
+    ]);
+
+    expect(respostas.map(({ status }) => status).sort()).toEqual([200, 400]);
+    expect(respostas.find(({ status }) => status === 400).body.erro)
+      .toMatch(/já foi reservado por outra ONG/);
+  });
+});
+
+describe('contar doações aceitas no mês', () => {
+  // Dado que há uma doação aceita neste mês e outra ainda disponível
+  // Quando Marta consulta o total de doações aceitas no mês
+  // Então o sistema informa somente a doação que foi aceita
+  it('retorna o total de doações aceitas no mês consultado', async () => {
+    const id = await request(app)
+      .post('/api/doacoes')
+      .send({ tipo: 'Arroz', quantidade: '5 kg', validade: daquiA(5) })
+      .then((res) => res.body.id);
     await request(app).post(`/api/doacoes/${id}/aceitar`).send({ ong: 'ONG Esperança' });
+    await request(app)
+      .post('/api/doacoes')
+      .send({ tipo: 'Feijão', quantidade: '3 kg', validade: daquiA(5) });
 
-    const segundaTentativa = await request(app)
-      .post(`/api/doacoes/${id}/aceitar`)
-      .send({ ong: 'ONG Mãos Solidárias' });
+    const mesAtual = new Date().toISOString().slice(0, 7);
+    const res = await request(app)
+      .get(`/api/relatorios/doacoes-aceitas?mes=${mesAtual}`);
 
-    expect(segundaTentativa.status).toBe(400);
-    expect(segundaTentativa.body.erro).toMatch(/já foi reservado por outra ONG/);
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ mes: mesAtual, total: 1 });
   });
 });
