@@ -130,6 +130,14 @@ O principal desafio é garantir que essa conexão aconteça antes que os aliment
   * **Quando** o coordenador clica no botão "Confirmar Retirada";
   * **Então** a doação é movida para o histórico com o status CONCLUÍDO e desaparece da tela de pendências ativas.
 
+**Fatias da História 8** (Aula 11). No código, o status RESERVADO da Regra 3 é o `aceita` que a História 7 já grava; CONCLUÍDO é `concluida`.
+
+| Fatia | O que entrega | Critério (Dado / Quando / Então) |
+|---|---|---|
+| 1 | A ONG confirma a retirada de um lote aceito e ele é encerrado | Dado uma doação aceita por uma ONG, quando a ONG confirma a retirada, então a doação fica `concluida` com o momento do encerramento registrado; uma doação que não está aceita é recusada com "Só é possível confirmar a retirada de uma doação aceita". |
+| 2 | Só a ONG que aceitou pode confirmar | Dado uma doação aceita pela ONG A, quando a ONG B tenta confirmar a retirada, então o sistema recusa e a doação continua aceita pela ONG A. |
+| 3 | A ONG vê suas pendências ativas | Dado que a ONG aceitou dois lotes e confirmou a retirada de um, quando ela abre suas pendências, então vê só o lote ainda não retirado. |
+
 ## Riscos
 
 Escala de probabilidade e impacto utilizada: Alta / Média / Baixa.
