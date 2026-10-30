@@ -37,7 +37,7 @@ export async function aceitar(id, ong) {
 export async function contarAceitasNoMes(mes) {
   const { rows } = await query(
     `SELECT COUNT(*) AS total FROM doacoes
-     WHERE status = 'aceita' AND substr(aceita_em, 1, 7) = ?`,
+       WHERE status IN ('aceita', 'concluida') AND substr(aceita_em, 1, 7) = ?`,
     [mes]
   );
   return rows[0].total;
