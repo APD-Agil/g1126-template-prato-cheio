@@ -4,7 +4,7 @@ import { query } from './db.js';
 export async function inserir({ tipo, quantidade, validade }) {
   const { rows } = await query(
     `INSERT INTO doacoes (tipo, quantidade, validade)
-     VALUES (?, ?, ?)
+     VALUES ($1, $2, $3)
      RETURNING *`,
     [tipo, quantidade, validade]
   );
@@ -20,14 +20,14 @@ export async function listarDisponiveis() {
 
 // Busca uma doação pelo id. Devolve undefined se não existir.
 export async function buscarPorId(id) {
-  const { rows } = await query(`SELECT * FROM doacoes WHERE id = ?`, [id]);
+  const { rows } = await query(`SELECT * FROM doacoes WHERE id = $1`, [id]);
   return rows[0];
 }
 
 export async function aceitar(id, ong) {
   const { rows } = await query(
-    `UPDATE doacoes SET status = 'aceita', ong = ?, aceita_em = datetime('now')
-     WHERE id = ? AND status = 'disponivel'
+    `UPDATE doacoes SET status = 'aceita', ong = $1, aceita_em = to_char(now(), 'YYYY-MM-DD HH24:MI:SS')
+     WHERE id = $2 AND status = 'disponivel'
      RETURNING *`,
     [ong, id]
   );
@@ -37,8 +37,8 @@ export async function aceitar(id, ong) {
 export async function contarAceitasNoMes(mes) {
   const { rows } = await query(
     `SELECT COUNT(*) AS total FROM doacoes
-       WHERE status IN ('aceita', 'concluida') AND substr(aceita_em, 1, 7) = ?`,
+       WHERE status IN ('aceita', 'concluida') AND substr(aceita_em, 1, 7) = $1`,
     [mes]
   );
-  return rows[0].total;
+  return Number(rows[0].total);
 }
