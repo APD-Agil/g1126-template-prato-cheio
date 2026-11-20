@@ -17,6 +17,22 @@ export function criarApp() {
     }
   });
 
+  app.get('/api/doacoes/pendencias', async (req, res) => {
+    try {
+      res.json(await doacoes.listarPendencias(req.query.ong));
+    } catch (erro) {
+      res.status(400).json({ erro: erro.message });
+    }
+  });
+
+  app.get('/api/doacoes/historico', async (req, res) => {
+    try {
+      res.json(await doacoes.listarHistorico(req.query.ong));
+    } catch (erro) {
+      res.status(400).json({ erro: erro.message });
+    }
+  });
+
   app.post('/api/doacoes', async (req, res) => {
     try {
       res.status(201).json(await doacoes.criarDoacao(req.body));
@@ -28,6 +44,14 @@ export function criarApp() {
   app.post('/api/doacoes/:id/aceitar', async (req, res) => {
     try {
       res.json(await doacoes.aceitar(req.params.id, req.body?.ong ?? 'ONG'));
+    } catch (erro) {
+      res.status(400).json({ erro: erro.message });
+    }
+  });
+
+  app.post('/api/doacoes/:id/confirmar-retirada', async (req, res) => {
+    try {
+      res.json(await doacoes.confirmarRetirada(req.params.id, req.body?.ong));
     } catch (erro) {
       res.status(400).json({ erro: erro.message });
     }

@@ -9,8 +9,8 @@ const app = criarApp();
 // da data em que os testes rodam nem violar a Regra 1 do docs/analise.md.
 const daquiA = (horas) => new Date(Date.now() + horas * 60 * 60 * 1000).toISOString();
 
-// Este teste já passa e não depende do banco:
-// prova que a aplicação sobe e que o CI está funcionando.
+// Verifica a rota de saúde; a preparação compartilhada do arquivo também
+// migra e limpa o PostgreSQL de teste antes de cada teste.
 describe('a aplicação sobe', () => {
   it('responde na verificação de saúde', async () => {
     const res = await request(app).get('/api/saude');
@@ -23,8 +23,7 @@ describe('a aplicação sobe', () => {
 // Testes do walking skeleton — cobrem os critérios de aceite (Dado/Quando/Então)
 // das Histórias 6 e 7 em docs/analise.md.
 //
-// Os testes abaixo usam o banco — que na Unidade 1 é SQLite em memória:
-// nada a instalar, nada a subir.
+// Os testes de regras usam o PostgreSQL definido em vitest.config.js.
 // ---------------------------------------------------------------------------
 
 beforeEach(async () => {
@@ -55,7 +54,7 @@ describe('publicar e listar doações', () => {
   // Dado que o formulário está preenchido
   // Quando o doador informa validade menor que 2h à frente (ou omite um campo)
   // Então o sistema não salva a doação e devolve o erro da Regra 1
-  it('recusa doação sem os campos obrigatórios', async () => {
+  it('recusa publicação sem campos obrigatórios ou com validade curta', async () => {
     const semCampos = await request(app)
       .post('/api/doacoes')
       .send({ tipo: 'Sopa' });
@@ -120,7 +119,91 @@ describe('aceitar uma doação', () => {
 
     expect(respostas.map(({ status }) => status).sort()).toEqual([200, 400]);
     expect(respostas.find(({ status }) => status === 400).body.erro)
-      .toMatch(/já foi reservado por outra ONG/);
+      .toBe('Este lote já foi reservado por outra ONG');
+  });
+});
+
+describe('confirmar retirada e consultar pendências', () => {
+  async function criarDoacaoAceita(ong = 'ONG Esperança') {
+    const criada = await request(app)
+      .post('/api/doacoes')
+      .send({ tipo: 'Sopa', quantidade: '10 porções', validade: daquiA(4) });
+    await request(app).post(`/api/doacoes/${criada.body.id}/aceitar`).send({ ong });
+    return criada.body.id;
+  }
+
+  it('conclui uma doação aceita, registra o encerramento e remove a pendência', async () => {
+    const id = await criarDoacaoAceita();
+
+    const res = await request(app)
+      .post(`/api/doacoes/${id}/confirmar-retirada`)
+      .send({ ong: 'ONG Esperança' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('concluida');
+    expect(res.body.concluida_em).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
+
+    const pendencias = await request(app)
+      .get('/api/doacoes/pendencias')
+      .query({ ong: 'ONG Esperança' });
+    expect(pendencias.status).toBe(200);
+    expect(pendencias.body).toEqual([]);
+    const historico = await request(app)
+      .get('/api/doacoes/historico')
+      .query({ ong: 'ONG Esperança' });
+    expect(historico.status).toBe(200);
+    expect(historico.body).toMatchObject([
+      { id, status: 'concluida', ong: 'ONG Esperança' }
+    ]);
+    expect(historico.body[0].concluida_em).toBe(res.body.concluida_em);
+  });
+
+  it('recusa confirmar uma doação que ainda não foi aceita', async () => {
+    const criada = await request(app)
+      .post('/api/doacoes')
+      .send({ tipo: 'Pão', quantidade: '20 unidades', validade: daquiA(4) });
+
+    const res = await request(app)
+      .post(`/api/doacoes/${criada.body.id}/confirmar-retirada`)
+      .send({ ong: 'ONG Esperança' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.erro).toBe('Só é possível confirmar a retirada de uma doação aceita');
+    const disponiveis = await request(app).get('/api/doacoes');
+    expect(disponiveis.body.map(({ id }) => id)).toContain(criada.body.id);
+  });
+
+  it('recusa a confirmação por uma ONG diferente e preserva a ONG aceita', async () => {
+    const id = await criarDoacaoAceita('ONG Esperança');
+
+    const res = await request(app)
+      .post(`/api/doacoes/${id}/confirmar-retirada`)
+      .send({ ong: 'ONG Mãos Solidárias' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.erro).toBe('Só a ONG que aceitou pode confirmar a retirada');
+    const pendencias = await request(app)
+      .get('/api/doacoes/pendencias')
+      .query({ ong: 'ONG Esperança' });
+    expect(pendencias.body).toHaveLength(1);
+    expect(pendencias.body[0]).toMatchObject({ id, status: 'aceita', ong: 'ONG Esperança' });
+  });
+
+  it('lista somente as doações aceitas ainda pendentes para a ONG informada', async () => {
+    const concluidas = await criarDoacaoAceita();
+    const pendente = await criarDoacaoAceita();
+    await criarDoacaoAceita('Outra ONG');
+    await request(app)
+      .post(`/api/doacoes/${concluidas}/confirmar-retirada`)
+      .send({ ong: 'ONG Esperança' });
+
+    const res = await request(app)
+      .get('/api/doacoes/pendencias')
+      .query({ ong: 'ONG Esperança' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.map(({ id }) => id)).toEqual([pendente]);
+    expect(res.body[0].status).toBe('aceita');
   });
 });
 
