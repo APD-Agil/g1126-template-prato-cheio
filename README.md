@@ -15,38 +15,38 @@ Conecta doadores de alimentos excedentes a ONGs, antes que a comida se perca.
 
 ## Como rodar
 
-Requisito: **Node.js 22.13 ou superior**. Mais nada — o banco da Unidade 1 é SQLite, embutido no próprio Node.
+Requisitos: **Node.js 22.13 ou superior** e PostgreSQL 16 acessível. A aplicação lê `DATABASE_URL` do ambiente; ela não carrega automaticamente um arquivo `.env`. O valor local usado pelo CI está em `.env.example`.
 
-> Esta é a **stack preferencial** da disciplina. Se o seu grupo optar por outra, registre o ADR de justificativa e garanta os mesmos compromissos: repositório público com CI verde, rota de saúde, testes por um comando, os três comandos documentados aqui no README e banco relacional migrado para PostgreSQL na Unidade 3.
+Para criar um PostgreSQL local com Docker (primeira execução):
 
 ```bash
-npm install       # só na primeira vez
-npm run db:migrar # cria o schema (arquivo dados.sqlite)
-npm start         # sobe em http://localhost:3000
-npm test          # roda os testes
-npm run dev       # sobe recarregando a cada alteração
+docker run --name prato-cheio-postgres -e POSTGRES_USER=pratocheio -e POSTGRES_PASSWORD=pratocheio -e POSTGRES_DB=pratocheio -p 5432:5432 -d postgres:16-alpine
 ```
 
-Os testes usam SQLite **em memória**, então não sujam o banco de desenvolvimento.
+No PowerShell, defina a conexão e execute:
 
-> Ao rodar `npm test` o Node imprime `ExperimentalWarning: SQLite is an experimental feature`.
-> É esperado — o módulo embutido `node:sqlite` ainda é marcado como experimental. Não é erro e não reprova o CI.
+```powershell
+$env:DATABASE_URL = 'postgres://pratocheio:pratocheio@localhost:5432/pratocheio'
+npm ci             # instala as dependências do clone limpo
+npm run db:migrar  # cria/atualiza o schema no PostgreSQL
+npm start          # sobe em http://localhost:3000
+```
 
-> **Atenção:** não deixe o repositório dentro de uma pasta sincronizada (OneDrive, Google Drive, Dropbox) nem em disco de rede. O SQLite precisa de trava de arquivo e nesses lugares falha com `disk I/O error`. Clone em uma pasta local comum, por exemplo `~/dev/`.
+Em outro terminal, com o mesmo `DATABASE_URL`, rode `npm test`. Para desenvolvimento com recarga automática, use `npm run dev`. A aplicação também migra o schema ao iniciar.
 
-## O banco: SQLite agora, PostgreSQL depois
+Os testes usam o PostgreSQL configurado pelo Vitest; no CI, o workflow sobe um serviço PostgreSQL 16 isolado.
+
+## O banco: PostgreSQL
 
 | Unidade | Banco | O que precisa instalar |
 |---|---|---|
-| 1 — Análise | **SQLite** (`node:sqlite`, embutido) | nada além do Node |
+| 1 — Análise | SQLite (`node:sqlite`, embutido) | nada além do Node |
 | 2 — Projeto | SQLite | nada |
-| 3 — Construção | **PostgreSQL** (após refatorar) | um PostgreSQL acessível — o caminho é escolha do grupo |
+| 3 — Construção | **PostgreSQL 16** | um PostgreSQL acessível por `DATABASE_URL` |
 
-A troca não é acidente de percurso: na Unidade 2 vocês registram a decisão em um **ADR** (alternativas, consequências, riscos) e na Unidade 3 executam a **refatoração** — com os testes existentes provando que o comportamento se manteve.
+A migração para PostgreSQL foi registrada no **ADR 0001** e executada na Unidade 3. O CI também roda os testes contra PostgreSQL 16.
 
-O `src/db.js` foi desenhado para isso: ele expõe `query()` devolvendo `{ rows }`, então a troca do banco fica contida nele e não vaza para as regras de negócio.
-
-**Como o PostgreSQL vai subir é decisão do grupo**, comparada no mesmo ADR: instalar o PostgreSQL na máquina, subir um contêiner, ou usar um serviço gerenciado gratuito (Neon, Supabase, Render). A disciplina não impõe o caminho — exige o banco alcançável por `DATABASE_URL`, o schema migrado e o CI verde. Cada opção tem custo e risco diferentes, e reconhecê-los é parte da decisão.
+`src/db.js` concentra a conexão e expõe `query()` devolvendo `{ rows }`; `DATABASE_URL` seleciona o PostgreSQL usado pela aplicação.
 
 ## Estrutura
 
@@ -54,8 +54,8 @@ O `src/db.js` foi desenhado para isso: ele expõe `query()` devolvendo `{ rows }
 src/server.js        entrypoint (npm start)
 src/db.js            conexão e schema do banco (pronto)
 src/app.js           rotas da API
-src/doacoes.js       regras de negócio      <- implementar (U1)
-src/repositorio.js   acesso ao banco (SQL)  <- implementar (U1)
+src/doacoes.js       regras de negócio
+src/repositorio.js   acesso ao banco (SQL)
 public/index.html    interface (funciona no celular)
 tests/               testes automatizados
 docs/analise.md      documento de análise   (Trabalho 1)
@@ -95,13 +95,9 @@ peça a revisão de **outro integrante**. Só então faça o merge.
 
 ## O que já está pronto e o que falta
 
-Pronto: estrutura do projeto, interface básica, rota de saúde, **conexão com o banco e o schema** (`src/db.js`), CI configurado e um teste passando (prova que a aplicação sobe).
+Pronto: estrutura do projeto, interface básica, rota de saúde, **conexão PostgreSQL e schema** (`src/db.js`), publicação/listagem/aceite de doações, validação de validade mínima, relatório mensal e CI configurado. Os testes automatizados estão em `tests/`.
 
-Falta (Trabalho 1 — walking skeleton): implementar `src/doacoes.js` (regras) e
-`src/repositorio.js` (SQL) para que a história zero funcione ponta a ponta —
-**um doador publica uma doação → uma ONG vê a doação → a ONG a aceita e ela sai da lista.**
-Os critérios de aceite estão em `tests/doacoes.test.js` como `it.todo`: troque cada um
-por um teste de verdade conforme implementa.
+Falta implementar a confirmação de retirada da História 8 e a consulta de pendências ativas por ONG. Esses fluxos ainda não têm rota nem teste em `main`; veja os critérios correspondentes em `docs/analise.md` e a validação em `docs/validacao.md`.
 
 ## Uso de IA
 
