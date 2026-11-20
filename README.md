@@ -97,9 +97,9 @@ peça a revisão de **outro integrante**. Só então faça o merge.
 
 ## O que já está pronto e o que falta
 
-Pronto: estrutura do projeto, interface básica, rota de saúde, **conexão PostgreSQL e schema** (`src/db.js`), publicação/listagem/aceite de doações, validação de validade mínima, relatório mensal e CI configurado. Os testes automatizados estão em `tests/`.
+Pronto: estrutura do projeto, interface básica, rota de saúde, **conexão PostgreSQL e schema** (`src/db.js`), publicação/listagem/aceite de doações, confirmação da retirada, pendências/histórico por ONG, validação de validade mínima, relatório mensal e CI configurado. A interface também mostra feedback de sucesso e erro para publicação e aceite. Os testes automatizados estão em `tests/`.
 
-Falta implementar a confirmação de retirada da História 8 e a consulta de pendências ativas por ONG. Esses fluxos ainda não têm rota nem teste em `main`; veja os critérios correspondentes em `docs/analise.md` e a validação em `docs/validacao.md`.
+As rotas de ONG recebem o nome informado pelo cliente; este incremento não adiciona autenticação. Para o fluxo implementado e suas limitações, veja `docs/analise.md` e `docs/validacao.md`.
 
 ## Uso de IA
 
