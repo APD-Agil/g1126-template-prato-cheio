@@ -21,6 +21,8 @@ Os textos da tabela reproduzem os oito critérios da seção **Critérios de ace
 
 Com `npm start` ativo, `GET /api/saude` respondeu `{"ok":true}`. A execução HTTP local completou publicação (`disponivel`), aceite (`aceita`), listagem de pendências, confirmação (`concluida` com `concluida_em`), remoção das pendências, inclusão no histórico e recusa de validade de uma hora com HTTP 400 e a mensagem especificada.
 
+No CI do commit `a31a2ec`, o job [build-e-testes, run 32](https://github.com/APD-Agil/g1126-template-prato-cheio/actions/runs/44838464014/job/136640661192) concluiu com sucesso. As etapas `Rodar os testes` e `Verificar se a aplicação sobe` passaram contra PostgreSQL 16.
+
 ## Critérios que não atendem — por quê
 
 Nenhum critério ficou parcial ou sem atender após a implementação e a execução local dos testes. A autenticação da ONG não faz parte dos critérios deste incremento: as rotas usam o nome de ONG enviado pelo cliente.
