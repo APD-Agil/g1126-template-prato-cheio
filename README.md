@@ -23,6 +23,8 @@ Para criar um PostgreSQL local com Docker (primeira execução):
 docker run --name prato-cheio-postgres -e POSTGRES_USER=pratocheio -e POSTGRES_PASSWORD=pratocheio -e POSTGRES_DB=pratocheio -p 5432:5432 -d postgres:16-alpine
 ```
 
+Esse comando cria o contêiner uma vez. Em execuções seguintes, use `docker start prato-cheio-postgres`. Antes de migrar o schema, aguarde `docker exec prato-cheio-postgres pg_isready -U pratocheio` informar que o servidor está aceitando conexões.
+
 No PowerShell, defina a conexão e execute:
 
 ```powershell

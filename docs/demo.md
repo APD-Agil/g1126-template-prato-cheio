@@ -10,19 +10,21 @@ No PowerShell, em um clone limpo:
 
 ```powershell
 docker run --name prato-cheio-postgres -e POSTGRES_USER=pratocheio -e POSTGRES_PASSWORD=pratocheio -e POSTGRES_DB=pratocheio -p 5432:5432 -d postgres:16-alpine
+docker exec prato-cheio-postgres pg_isready -U pratocheio
 $env:DATABASE_URL = 'postgres://pratocheio:pratocheio@localhost:5432/pratocheio'
 npm ci
 npm run db:migrar
 npm start
 ```
 
-O comando `docker run` cria o banco na primeira execução; se o contêiner já existir, inicie-o com `docker start prato-cheio-postgres`. Deixe `npm start` rodando e use outro terminal para os passos abaixo. Esses comandos correspondem ao README.
+O comando `docker run` cria o banco na primeira execução; se o contêiner já existir, inicie-o com `docker start prato-cheio-postgres`. Repita `docker exec ... pg_isready` até informar que o servidor está aceitando conexões. Deixe `npm start` rodando e use outro terminal para os passos abaixo. Esses comandos correspondem ao README.
 
 ### Execução observada nesta iteração
 
 - `npm ci` no clone limpo terminou com sucesso (`added 150 packages`).
 - O valor definido para `DATABASE_URL` foi `postgres://pratocheio:pratocheio@localhost:5432/pratocheio`.
 - Não havia PostgreSQL escutando em `localhost:5432`; `docker info` também falhou porque o daemon Docker não estava rodando. Portanto, `npm test`, `npm run db:migrar` e `npm start` não chegaram a executar fluxos da aplicação: a conexão terminou em `ECONNREFUSED`.
+- No CI do PR #11, o job `build-e-testes` passou com 8 testes e a verificação de saúde da API. Isso valida os testes automatizados, mas não substitui a execução manual deste roteiro ou a conferência da interface no navegador.
 - O roteiro abaixo ainda precisa ser executado por um integrante com PostgreSQL disponível. Não considere as respostas esperadas como uma execução manual concluída.
 
 ## Roteiro (3 minutos)
@@ -36,7 +38,7 @@ O comando `docker run` cria o banco na primeira execução; se o contêiner já 
 
 ## Passo a passo reproduzível
 
-Execute os comandos abaixo no PowerShell, com `npm start` ativo. Os resultados esperados correspondem aos testes existentes e ao tratamento das rotas; o integrante que fizer a demo deve confirmar as respostas neste ambiente PostgreSQL.
+Execute os comandos abaixo no PowerShell, com `npm start` ativo. Os testes correspondentes passaram no CI contra PostgreSQL 16; o integrante que fizer a demo ainda deve confirmar as respostas neste ambiente e verificar a apresentação na interface.
 
 1. Crie uma doação com validade de três horas:
 
