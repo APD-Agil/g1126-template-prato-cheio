@@ -104,4 +104,4 @@ Execute os comandos abaixo no PowerShell, com `npm start` ativo. Eles usam o nom
 
 ## Testado por
 
-PENDENTE_HUMANO
+Davi

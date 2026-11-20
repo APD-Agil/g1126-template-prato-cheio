@@ -2,12 +2,12 @@
 
 *Atividade da Aula 13 · confronto do produto com os critérios de aceite de `docs/analise.md`*
 
-Os textos da tabela reproduzem os oito critérios da seção **Critérios de aceite** e da tabela **Fatias da História 8** de `docs/analise.md`. Todos foram cobertos por testes executados localmente contra PostgreSQL 16.
+Os textos da tabela reproduzem os oito critérios da seção **Critérios de aceite** e da tabela **Fatias da História 8** de `docs/analise.md`. Os testes foram executados contra PostgreSQL 16, no ambiente local de desenvolvimento e no CI.
 
 | # | Critério de aceite (texto de `docs/analise.md`) | Status | Evidência observada |
 |:--:|---|:--:|---|
 | 1 | Dado que um lote de alimento está publicado e consta com o status DISPONÍVEL; Quando o coordenador da ONG clica no botão "Aceitar Doação"; Então o lote é removido da listagem pública e o sistema exibe a confirmação de reserva exclusiva para essa ONG. | atende | `tests/doacoes.test.js`: `marca a doação como aceita pela ONG` e `remove a doação da lista de disponíveis depois de aceita`; `tests/interface.test.js`: `mostra confirmação de reserva exclusiva após aceitar`. Os testes passaram no `npm test` local (17/17). |
-| 2 | Dado que um lote está DISPONÍVEL e dois coordenadores de ONGs diferentes estão com a tela de aceite aberta; Quando ambos clicam em "Aceitar Doação" exatamente ao mesmo tempo; Então o sistema exibe a confirmação de sucesso para apenas um deles e a mensagem de erro "Este lote já foi reservado por outra ONG" para o outro. | atende | `tests/doacoes.test.js`: `permite apenas um aceite quando duas ONGs disputam o lote simultaneamente`; `tests/interface.test.js`: `mostra à ONG perdedora o erro de disputa retornado pela API`. Ambos passaram no `npm test` local (17/17). |
+| 2 | Dado que um lote está DISPONÍVEL e dois coordenadores de ONGs diferentes estão com a tela de aceite aberta; Quando ambos clicam em "Aceitar Doação" exatamente ao mesmo tempo; Então o sistema exibe a confirmação de sucesso para apenas um deles e a mensagem de erro "Este lote já foi reservado por outra ONG" para o outro. | parcial | `tests/doacoes.test.js`: `permite apenas um aceite quando duas ONGs disputam o lote simultaneamente`; `tests/interface.test.js`: `mostra à ONG perdedora o erro de disputa retornado pela API`. A exclusividade do aceite é verificada, mas a identidade da ONG não é autenticada (ver abaixo). |
 | 3 | Dado que o formulário de doação está vazio e pronto para preenchimento; Quando o doador preenche os campos obrigatórios com uma validade de 3 horas à frente e envia; Então o sistema salva a doação e ela aparece imediatamente na lista de lotes DISPONÍVEIS para as ONGs. | atende | `tests/doacoes.test.js`: `mostra a doação publicada na lista de disponíveis`; passou no `npm test` local (17/17). A execução HTTP local também publicou uma doação com `status=disponivel`. |
 | 4 | Dado que o formulário está preenchido; Quando o doador informa uma validade de apenas 1 hora à frente do horário atual e tenta enviar; Então o sistema não salva a doação e exibe o erro "O prazo de validade deve ser de no mínimo 2 horas a partir de agora". | atende | `tests/doacoes.test.js`: `recusa publicação sem campos obrigatórios ou com validade curta`; `tests/interface.test.js`: `mostra o erro retornado pela API ao recusar validade curta`. Ambos passaram no `npm test` local (17/17); a execução HTTP local respondeu 400 com a mensagem exata. |
 | 5 | Dado que existe uma doação com o status RESERVADA vinculada à ONG atual; Quando o coordenador clica no botão "Confirmar Retirada"; Então a doação é movida para o histórico com o status CONCLUÍDO e desaparece da tela de pendências ativas. | atende | `tests/doacoes.test.js`: `conclui uma doação aceita, registra o encerramento e remove a pendência`; `tests/interface.test.js`: `mostra confirmação após concluir a retirada`. O smoke HTTP local observou `concluida`, timestamp, 0 pendências e 1 item no histórico. |
@@ -25,7 +25,10 @@ No CI do commit `a31a2ec`, o job [build-e-testes, run 32](https://github.com/APD
 
 ## Critérios que não atendem — por quê
 
-Nenhum critério ficou parcial ou sem atender após a implementação e a execução local dos testes. A autenticação da ONG não faz parte dos critérios deste incremento: as rotas usam o nome de ONG enviado pelo cliente.
+### Critério 2: autenticação da ONG
+- **O que funciona:** a exclusividade do aceite, verificada por teste de concorrência (`permite apenas um aceite quando duas ONGs disputam o lote simultaneamente`).
+- **O que falta:** autenticação da ONG. As rotas usam o nome de ONG enviado pelo cliente, e a Regra 2 de `docs/analise.md` pede "ONG autenticada".
+- **Por que ficou de fora:** o login completo foi adiado para o fim do piloto (Conflito 1 de `docs/analise.md`). A correção deve ser ratificada pela Marta antes de ser tratada como mudança de critério.
 
 ## Mudanças de critério
 
@@ -33,4 +36,4 @@ Nenhum critério ficou parcial ou sem atender após a implementação e a execu�
 
 ## Uso de IA
 
-A IA implementou confirmação, pendências e histórico, atualizou o feedback da interface, escreveu testes e atualizou a documentação do modelo e da validação. A primeira execução da suíte com os testes de interface identificou dois mocks com URLs incorretas; corrigi os mocks e a repetição passou. Uma primeira tentativa de smoke com `curl.exe` enviou JSON malformado; a repetição com `fetch` validou HTTP 400 e a mensagem correta. `npm test` passou localmente contra PostgreSQL. Os testes de interface usam DOM simulado, não navegador real; outro integrante ainda precisa executar `docs/demo.md` no navegador e revisar a limitação de identidade da ONG.
+A IA implementou confirmação, pendências e histórico, atualizou o feedback da interface, escreveu testes e atualizou a documentação do modelo e da validação. A primeira execução da suíte com os testes de interface identificou dois mocks com URLs incorretas; os mocks foram corrigidos e a repetição passou. Uma primeira tentativa de smoke com `curl.exe` enviou JSON malformado; a repetição com `fetch` validou HTTP 400 e a mensagem correta. `npm test` passou localmente contra PostgreSQL. Os testes de interface usam DOM simulado, não navegador real. Ainda faltam: um integrante executar `docs/demo.md` no navegador e a revisão humana sobre a limitação de identidade da ONG, que afeta o critério 2.
