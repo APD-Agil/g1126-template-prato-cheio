@@ -72,12 +72,14 @@ export async function migrar() {
         status      TEXT NOT NULL DEFAULT 'disponivel',
         ong         TEXT,
         aceita_em   TEXT,
+        concluida_em TEXT,
         criada_em   TEXT NOT NULL DEFAULT to_char(now(), 'YYYY-MM-DD HH24:MI:SS')
       )
     `);
     // Equivalente ao PRAGMA table_info usado no SQLite: garante a coluna em
     // bancos criados antes dela existir, sem precisar de uma migração separada.
     await conexaoPostgres().query(`ALTER TABLE doacoes ADD COLUMN IF NOT EXISTS aceita_em TEXT`);
+    await conexaoPostgres().query(`ALTER TABLE doacoes ADD COLUMN IF NOT EXISTS concluida_em TEXT`);
     return;
   }
 
@@ -91,6 +93,7 @@ export async function migrar() {
       status      TEXT NOT NULL DEFAULT 'disponivel',
       ong         TEXT,
       aceita_em   TEXT,
+      concluida_em TEXT,
       criada_em   TEXT NOT NULL DEFAULT (datetime('now'))
     )
   `);
@@ -98,6 +101,9 @@ export async function migrar() {
   const colunas = conexaoSqlite().prepare('PRAGMA table_info(doacoes)').all();
   if (!colunas.some((coluna) => coluna.name === 'aceita_em')) {
     conexaoSqlite().exec('ALTER TABLE doacoes ADD COLUMN aceita_em TEXT');
+  }
+  if (!colunas.some((coluna) => coluna.name === 'concluida_em')) {
+    conexaoSqlite().exec('ALTER TABLE doacoes ADD COLUMN concluida_em TEXT');
   }
 }
 

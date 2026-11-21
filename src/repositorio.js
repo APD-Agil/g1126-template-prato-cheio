@@ -34,6 +34,37 @@ export async function aceitar(id, ong) {
   return rows[0];
 }
 
+export async function confirmarRetirada(id, ong) {
+  const { rows } = await query(
+    `UPDATE doacoes
+       SET status = 'concluida', concluida_em = to_char(now(), 'YYYY-MM-DD HH24:MI:SS')
+     WHERE id = $1 AND ong = $2 AND status = 'aceita'
+     RETURNING *`,
+    [id, ong]
+  );
+  return rows[0];
+}
+
+export async function listarPendencias(ong) {
+  const { rows } = await query(
+    `SELECT * FROM doacoes
+     WHERE ong = $1 AND status = 'aceita'
+     ORDER BY validade ASC`,
+    [ong]
+  );
+  return rows;
+}
+
+export async function listarHistorico(ong) {
+  const { rows } = await query(
+    `SELECT * FROM doacoes
+     WHERE ong = $1 AND status = 'concluida'
+     ORDER BY concluida_em DESC`,
+    [ong]
+  );
+  return rows;
+}
+
 export async function contarAceitasNoMes(mes) {
   const { rows } = await query(
     `SELECT COUNT(*) AS total FROM doacoes

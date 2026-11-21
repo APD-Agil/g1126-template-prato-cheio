@@ -45,6 +45,46 @@ export async function aceitar(id, ong) {
   return atualizada;
 }
 
+export async function confirmarRetirada(id, ong) {
+  if (typeof ong !== 'string' || !ong.trim()) {
+    throw new Error('Informe a ONG');
+  }
+
+  const doacao = await repo.buscarPorId(id);
+  if (!doacao) {
+    throw new Error('Doação não encontrada');
+  }
+  if (doacao.status !== 'aceita') {
+    throw new Error('Só é possível confirmar a retirada de uma doação aceita');
+  }
+  if (doacao.ong !== ong.trim()) {
+    throw new Error('Só a ONG que aceitou pode confirmar a retirada');
+  }
+
+  const atualizada = await repo.confirmarRetirada(id, ong.trim());
+  if (!atualizada) {
+    throw new Error('Só é possível confirmar a retirada de uma doação aceita');
+  }
+
+  return atualizada;
+}
+
+export async function listarPendencias(ong) {
+  if (typeof ong !== 'string' || !ong.trim()) {
+    throw new Error('Informe a ONG');
+  }
+
+  return repo.listarPendencias(ong.trim());
+}
+
+export async function listarHistorico(ong) {
+  if (typeof ong !== 'string' || !ong.trim()) {
+    throw new Error('Informe a ONG');
+  }
+
+  return repo.listarHistorico(ong.trim());
+}
+
 export async function contarAceitasNoMes(mes) {
   if (typeof mes !== 'string' || !/^\d{4}-(0[1-9]|1[0-2])$/.test(mes)) {
     throw new Error('Informe o mês no formato AAAA-MM');

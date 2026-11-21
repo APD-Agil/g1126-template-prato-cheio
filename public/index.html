@@ -13,6 +13,9 @@
     button { margin-top: .8rem; cursor: pointer; }
     li { border: 1px solid #ddd; border-radius: .5rem; padding: .6rem; margin-bottom: .5rem; list-style: none; }
     ul { padding: 0; }
+    #mensagem { min-height: 1.5em; }
+    #mensagem.erro { color: #b00020; }
+    #mensagem.sucesso { color: #176b2c; }
   </style>
 </head>
 <body>
@@ -29,46 +32,118 @@
     <button id="publicar">Publicar</button>
   </fieldset>
 
+  <label for="ong">ONG atual</label>
+  <input id="ong" value="Minha ONG">
+  <p id="mensagem" role="status" aria-live="polite"></p>
+
   <h2>Doações disponíveis</h2>
   <ul id="lista"></ul>
 
+  <h2>Minhas pendências de retirada</h2>
+  <ul id="pendencias"></ul>
+
+  <h2>Histórico de retiradas</h2>
+  <ul id="historico"></ul>
+
   <script>
+    function mostrarMensagem(texto, tipo) {
+      const mensagem = document.getElementById('mensagem');
+      mensagem.textContent = texto;
+      mensagem.className = tipo;
+    }
+
+    async function lerResposta(res) {
+      const corpo = await res.json();
+      if (!res.ok) throw new Error(corpo.erro || `Erro HTTP ${res.status}`);
+      return corpo;
+    }
+
     async function carregar() {
-      const res = await fetch('/api/doacoes');
-      const doacoes = await res.json();
-      const lista = document.getElementById('lista');
-      lista.innerHTML = doacoes.length
-        ? ''
-        : '<li>Nenhuma doação disponível.</li>';
-      for (const d of doacoes) {
+      try {
+        const ong = document.getElementById('ong').value.trim();
+        const [doacoes, pendencias, historico] = await Promise.all([
+          fetch('/api/doacoes').then(lerResposta),
+          fetch(`/api/doacoes/pendencias?ong=${encodeURIComponent(ong)}`).then(lerResposta),
+          fetch(`/api/doacoes/historico?ong=${encodeURIComponent(ong)}`).then(lerResposta)
+        ]);
+        renderizarLista('lista', doacoes, 'Nenhuma doação disponível.', 'aceitar');
+        renderizarLista('pendencias', pendencias, 'Nenhuma pendência de retirada.', 'confirmar');
+        renderizarLista('historico', historico, 'Nenhuma retirada concluída.', 'historico');
+      } catch (erro) {
+        mostrarMensagem(erro.message, 'erro');
+      }
+    }
+
+    function renderizarLista(idLista, doacoes, vazio, acao) {
+      const lista = document.getElementById(idLista);
+      lista.innerHTML = doacoes.length ? '' : `<li>${vazio}</li>`;
+      for (const doacao of doacoes) {
         const li = document.createElement('li');
-        li.textContent = `${d.tipo} — ${d.quantidade} (até ${d.validade}) `;
-        const botao = document.createElement('button');
-        botao.textContent = 'Aceitar';
-        botao.onclick = async () => {
-          await fetch(`/api/doacoes/${d.id}/aceitar`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ong: 'Minha ONG' })
-          });
-          carregar();
-        };
-        li.appendChild(botao);
+        if (acao === 'historico') {
+          li.textContent = `${doacao.tipo} — ${doacao.quantidade} (retirada confirmada em ${doacao.concluida_em})`;
+        } else {
+          li.textContent = `${doacao.tipo} — ${doacao.quantidade} (até ${doacao.validade}) `;
+          const botao = document.createElement('button');
+          botao.textContent = acao === 'confirmar' ? 'Confirmar Retirada' : 'Aceitar';
+          botao.onclick = () => acao === 'confirmar'
+            ? confirmarRetirada(doacao.id)
+            : aceitar(doacao.id);
+          li.appendChild(botao);
+        }
         lista.appendChild(li);
       }
     }
 
+    async function aceitar(id) {
+      try {
+        const ong = document.getElementById('ong').value.trim();
+        const doacao = await fetch(`/api/doacoes/${id}/aceitar`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ong })
+        }).then(lerResposta);
+        mostrarMensagem(`Reserva exclusiva confirmada para ${doacao.ong}.`, 'sucesso');
+        await carregar();
+      } catch (erro) {
+        mostrarMensagem(erro.message, 'erro');
+        await carregar();
+      }
+    }
+
+    async function confirmarRetirada(id) {
+      try {
+        const ong = document.getElementById('ong').value.trim();
+        const doacao = await fetch(`/api/doacoes/${id}/confirmar-retirada`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ong })
+        }).then(lerResposta);
+        mostrarMensagem(`Retirada confirmada para ${doacao.ong}.`, 'sucesso');
+        await carregar();
+      } catch (erro) {
+        mostrarMensagem(erro.message, 'erro');
+        await carregar();
+      }
+    }
+
+    document.getElementById('ong').onchange = carregar;
+
     document.getElementById('publicar').onclick = async () => {
-      await fetch('/api/doacoes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tipo: document.getElementById('tipo').value,
-          quantidade: document.getElementById('quantidade').value,
-          validade: document.getElementById('validade').value
-        })
-      });
-      carregar();
+      try {
+        const doacao = await fetch('/api/doacoes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tipo: document.getElementById('tipo').value,
+            quantidade: document.getElementById('quantidade').value,
+            validade: document.getElementById('validade').value
+          })
+        }).then(lerResposta);
+        mostrarMensagem(`Doação #${doacao.id} publicada com sucesso.`, 'sucesso');
+        await carregar();
+      } catch (erro) {
+        mostrarMensagem(erro.message, 'erro');
+      }
     };
 
     carregar();
