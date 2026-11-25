@@ -54,6 +54,12 @@
   <h2>Histórico de coletas</h2>
   <ul id="historico"></ul>
 
+  <h2>Resultado do mês (coordenação)</h2>
+  <label for="mes">Mês</label>
+  <input id="mes" type="month">
+  <button id="ver-resultado">Ver resultado</button>
+  <p id="resultado"></p>
+
   <script>
     function mostrarMensagem(texto, tipo) {
       const mensagem = document.getElementById('mensagem');
@@ -183,6 +189,20 @@
         await carregar();
       }
     }
+
+    // H4: resultado do mês para a Marta (contado pelo mês da publicação).
+    document.getElementById('ver-resultado').onclick = async () => {
+      const saida = document.getElementById('resultado');
+      try {
+        const mes = document.getElementById('mes').value;
+        const r = await fetch(`/api/relatorios/mes?mes=${encodeURIComponent(mes)}`).then(lerResposta);
+        saida.textContent = `${r.mes}: ${r.publicadas} publicadas · ${r.aceitas} aceitas · `
+          + `${r.coletadas} coletadas · ${r.devolucoes} devoluções · `
+          + `tempo médio até a coleta: ${r.tempoMedioAteColeta}`;
+      } catch (erro) {
+        saida.textContent = erro.message;
+      }
+    };
 
     document.getElementById('ong').onchange = carregar;
     campoDoador.onchange = () => {

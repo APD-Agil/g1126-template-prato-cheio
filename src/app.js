@@ -73,6 +73,14 @@ export function criarApp() {
     }
   });
 
+  app.get('/api/relatorios/mes', async (req, res) => {
+    try {
+      res.json(await doacoes.resultadoDoMes(req.query.mes));
+    } catch (erro) {
+      res.status(400).json({ erro: erro.message });
+    }
+  });
+
   app.get('/api/relatorios/doacoes-aceitas', async (req, res) => {
     try {
       const mes = req.query.mes;
