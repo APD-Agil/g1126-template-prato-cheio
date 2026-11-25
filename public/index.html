@@ -36,6 +36,8 @@
 
   <label for="ong">ONG atual</label>
   <input id="ong" value="Minha ONG">
+  <label for="voluntario">Voluntário que buscou (primeiro nome)</label>
+  <input id="voluntario" placeholder="Ex.: Rui">
   <p id="mensagem" role="status" aria-live="polite"></p>
 
   <h2>Minhas doações</h2>
@@ -44,10 +46,10 @@
   <h2>Doações disponíveis</h2>
   <ul id="lista"></ul>
 
-  <h2>Minhas pendências de retirada</h2>
+  <h2>Pendências de coleta da ONG</h2>
   <ul id="pendencias"></ul>
 
-  <h2>Histórico de retiradas</h2>
+  <h2>Histórico de coletas</h2>
   <ul id="historico"></ul>
 
   <script>
@@ -97,8 +99,8 @@
           fetch(`/api/doacoes/historico?ong=${encodeURIComponent(ong)}`).then(lerResposta)
         ]);
         renderizarLista('lista', doacoes, 'Nenhuma doação disponível.', 'aceitar');
-        renderizarLista('pendencias', pendencias, 'Nenhuma pendência de retirada.', 'confirmar');
-        renderizarLista('historico', historico, 'Nenhuma retirada concluída.', 'historico');
+        renderizarLista('pendencias', pendencias, 'Nenhuma pendência de coleta.', 'confirmar');
+        renderizarLista('historico', historico, 'Nenhuma coleta confirmada.', 'historico');
       } catch (erro) {
         mostrarMensagem(erro.message, 'erro');
       }
@@ -110,13 +112,13 @@
       for (const doacao of doacoes) {
         const li = document.createElement('li');
         if (acao === 'historico') {
-          li.textContent = `${doacao.tipo} — ${doacao.quantidade} (retirada confirmada em ${doacao.concluida_em})`;
+          li.textContent = `${doacao.tipo} — ${doacao.quantidade} (coletada por ${doacao.voluntario} em ${doacao.coletada_em})`;
         } else {
           li.textContent = `${doacao.tipo} — ${doacao.quantidade} (até ${doacao.validade}) `;
           const botao = document.createElement('button');
-          botao.textContent = acao === 'confirmar' ? 'Confirmar Retirada' : 'Aceitar';
+          botao.textContent = acao === 'confirmar' ? 'Confirmar Coleta' : 'Aceitar';
           botao.onclick = () => acao === 'confirmar'
-            ? confirmarRetirada(doacao.id)
+            ? confirmarColeta(doacao.id)
             : aceitar(doacao.id);
           li.appendChild(botao);
         }
@@ -140,15 +142,16 @@
       }
     }
 
-    async function confirmarRetirada(id) {
+    async function confirmarColeta(id) {
       try {
         const ong = document.getElementById('ong').value.trim();
-        const doacao = await fetch(`/api/doacoes/${id}/confirmar-retirada`, {
+        const voluntario = document.getElementById('voluntario').value.trim();
+        const doacao = await fetch(`/api/doacoes/${id}/confirmar-coleta`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ong })
+          body: JSON.stringify({ ong, voluntario })
         }).then(lerResposta);
-        mostrarMensagem(`Retirada confirmada para ${doacao.ong}.`, 'sucesso');
+        mostrarMensagem(`Coleta confirmada por ${doacao.voluntario} para ${doacao.ong}.`, 'sucesso');
         await carregar();
       } catch (erro) {
         mostrarMensagem(erro.message, 'erro');

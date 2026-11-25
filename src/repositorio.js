@@ -43,13 +43,15 @@ export async function aceitar(id, ong) {
   return rows[0];
 }
 
-export async function confirmarRetirada(id, ong) {
+// H2: só sai de `aceita` para `coletada` (a condição no WHERE impede a confirmação dupla).
+export async function confirmarColeta(id, ong, voluntario) {
   const { rows } = await query(
     `UPDATE doacoes
-       SET status = 'concluida', concluida_em = to_char(now(), 'YYYY-MM-DD HH24:MI:SS')
+       SET status = 'coletada', voluntario = $3,
+           coletada_em = to_char(now(), 'YYYY-MM-DD HH24:MI:SS')
      WHERE id = $1 AND ong = $2 AND status = 'aceita'
      RETURNING *`,
-    [id, ong]
+    [id, ong, voluntario]
   );
   return rows[0];
 }
@@ -67,8 +69,8 @@ export async function listarPendencias(ong) {
 export async function listarHistorico(ong) {
   const { rows } = await query(
     `SELECT * FROM doacoes
-     WHERE ong = $1 AND status = 'concluida'
-     ORDER BY concluida_em DESC`,
+     WHERE ong = $1 AND status = 'coletada'
+     ORDER BY coletada_em DESC`,
     [ong]
   );
   return rows;
@@ -77,7 +79,7 @@ export async function listarHistorico(ong) {
 export async function contarAceitasNoMes(mes) {
   const { rows } = await query(
     `SELECT COUNT(*) AS total FROM doacoes
-       WHERE status IN ('aceita', 'concluida') AND substr(aceita_em, 1, 7) = $1`,
+       WHERE status IN ('aceita', 'coletada') AND substr(aceita_em, 1, 7) = $1`,
     [mes]
   );
   return Number(rows[0].total);

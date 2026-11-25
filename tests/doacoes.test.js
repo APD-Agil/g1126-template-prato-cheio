@@ -123,7 +123,7 @@ describe('aceitar uma doação', () => {
   });
 });
 
-describe('confirmar retirada e consultar pendências', () => {
+describe('confirmar retirada (agora coleta, H2) e consultar pendências', () => {
   async function criarDoacaoAceita(ong = 'ONG Esperança') {
     const criada = await request(app)
       .post('/api/doacoes')
@@ -136,12 +136,12 @@ describe('confirmar retirada e consultar pendências', () => {
     const id = await criarDoacaoAceita();
 
     const res = await request(app)
-      .post(`/api/doacoes/${id}/confirmar-retirada`)
-      .send({ ong: 'ONG Esperança' });
+      .post(`/api/doacoes/${id}/confirmar-coleta`)
+      .send({ ong: 'ONG Esperança', voluntario: 'Rui' });
 
     expect(res.status).toBe(200);
-    expect(res.body.status).toBe('concluida');
-    expect(res.body.concluida_em).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
+    expect(res.body.status).toBe('coletada');
+    expect(res.body.coletada_em).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
 
     const pendencias = await request(app)
       .get('/api/doacoes/pendencias')
@@ -153,9 +153,9 @@ describe('confirmar retirada e consultar pendências', () => {
       .query({ ong: 'ONG Esperança' });
     expect(historico.status).toBe(200);
     expect(historico.body).toMatchObject([
-      { id, status: 'concluida', ong: 'ONG Esperança' }
+      { id, status: 'coletada', ong: 'ONG Esperança' }
     ]);
-    expect(historico.body[0].concluida_em).toBe(res.body.concluida_em);
+    expect(historico.body[0].coletada_em).toBe(res.body.coletada_em);
   });
 
   it('recusa confirmar uma doação que ainda não foi aceita', async () => {
@@ -164,8 +164,8 @@ describe('confirmar retirada e consultar pendências', () => {
       .send({ tipo: 'Pão', quantidade: '20 unidades', validade: daquiA(4), doador: 'Padaria Teste' });
 
     const res = await request(app)
-      .post(`/api/doacoes/${criada.body.id}/confirmar-retirada`)
-      .send({ ong: 'ONG Esperança' });
+      .post(`/api/doacoes/${criada.body.id}/confirmar-coleta`)
+      .send({ ong: 'ONG Esperança', voluntario: 'Rui' });
 
     expect(res.status).toBe(400);
     expect(res.body.erro).toBe('Só é possível confirmar a retirada de uma doação aceita');
@@ -177,8 +177,8 @@ describe('confirmar retirada e consultar pendências', () => {
     const id = await criarDoacaoAceita('ONG Esperança');
 
     const res = await request(app)
-      .post(`/api/doacoes/${id}/confirmar-retirada`)
-      .send({ ong: 'ONG Mãos Solidárias' });
+      .post(`/api/doacoes/${id}/confirmar-coleta`)
+      .send({ ong: 'ONG Mãos Solidárias', voluntario: 'Rui' });
 
     expect(res.status).toBe(400);
     expect(res.body.erro).toBe('Só a ONG que aceitou pode confirmar a retirada');
@@ -194,8 +194,8 @@ describe('confirmar retirada e consultar pendências', () => {
     const pendente = await criarDoacaoAceita();
     await criarDoacaoAceita('Outra ONG');
     await request(app)
-      .post(`/api/doacoes/${concluidas}/confirmar-retirada`)
-      .send({ ong: 'ONG Esperança' });
+      .post(`/api/doacoes/${concluidas}/confirmar-coleta`)
+      .send({ ong: 'ONG Esperança', voluntario: 'Rui' });
 
     const res = await request(app)
       .get('/api/doacoes/pendencias')

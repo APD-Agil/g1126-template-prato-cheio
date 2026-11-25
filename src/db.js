@@ -91,6 +91,15 @@ export async function migrar() {
       `UPDATE doacoes SET doador = $1 WHERE doador IS NULL`,
       [DOADOR_PADRAO]
     );
+    // H2: a coleta registra quem buscou e quando. O antigo estado `concluida`
+    // (História 8) passa a se chamar `coletada` (docs/projeto.md, decisão 4);
+    // as linhas existentes são convertidas aqui, guardando o horário original.
+    await conexaoPostgres().query(`ALTER TABLE doacoes ADD COLUMN IF NOT EXISTS voluntario TEXT`);
+    await conexaoPostgres().query(`ALTER TABLE doacoes ADD COLUMN IF NOT EXISTS coletada_em TEXT`);
+    await conexaoPostgres().query(
+      `UPDATE doacoes SET status = 'coletada', coletada_em = COALESCE(coletada_em, concluida_em)
+       WHERE status = 'concluida'`
+    );
     return;
   }
 
