@@ -16,7 +16,8 @@
 - **Evidência de que o comportamento se manteve:**
   - testes antes da mudança: 8 passando (SQLite em memória)
   - testes depois da mudança: 8 passando (PostgreSQL real, incluindo o teste de concorrência do aceite exclusivo rodando sobre um banco com bloqueio de linha de verdade)
-  - link da execução do CI verde: **[PREENCHER após abrir o PR e o CI rodar]**
+  - link da execução do CI verde: [build-e-testes do PR #10](https://github.com/APD-Agil/g1126-template-prato-cheio/actions/runs/42316466591/job/128230159557) (PostgreSQL 16 no serviço do workflow)
+  - PR da migração: [#10](https://github.com/APD-Agil/g1126-template-prato-cheio/pull/10) — `src/doacoes.js` fora do diff
 
 ## Refatoração 2 — Extrair o tratamento de erro repetido das rotas (`src/app.js`)
 

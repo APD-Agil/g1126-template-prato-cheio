@@ -13,6 +13,19 @@ Conecta doadores de alimentos excedentes a ONGs, antes que a comida se perca.
 - Pedro Henrique Coppola — @pedrohenriquecoppola
 - Willian Vinicius Ramalho - @willianramalho
 
+## Donos e revisores (Trabalho 3)
+
+Cada história tem um dono e um revisor diferentes. Em grupo de 5, a quinta pessoa é dona do fechamento.
+
+| Item | Dono | Revisor |
+|---|---|---|
+| Iteração 0 — estados da doação e base | Willian Vinicius Ramalho | Pedro Henrique Coppola |
+| H1 · O doador acompanha as suas doações | Willian Vinicius Ramalho | Davi Rudinei Peres |
+| H2 · O voluntário confirma a coleta | Otavio Santana Possenti | Henrique Osmar Adelino |
+| H3 · A ONG devolve uma doação aceita + Refatoração 2 | Davi Rudinei Peres | Pedro Henrique Coppola |
+| H4 · A Marta vê o resultado do mês | Pedro Henrique Coppola | Otavio Santana Possenti |
+| Fechamento (validação, demo, retrospectiva, `entrega-3`) | Henrique Osmar Adelino | Willian Vinicius Ramalho |
+
 ## Como rodar
 
 Requisitos: **Node.js 22.13 ou superior** e PostgreSQL 16 acessível. A aplicação lê `DATABASE_URL` do ambiente; ela não carrega automaticamente um arquivo `.env`. O valor local usado pelo CI está em `.env.example`.
