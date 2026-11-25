@@ -100,6 +100,17 @@ export async function migrar() {
       `UPDATE doacoes SET status = 'coletada', coletada_em = COALESCE(coletada_em, concluida_em)
        WHERE status = 'concluida'`
     );
+    // H3: cada devolução fica registrada à parte (quem devolveu, motivo, quando).
+    // A doação em si volta inteira para `disponivel`, sem rastro da ONG anterior.
+    await conexaoPostgres().query(`
+      CREATE TABLE IF NOT EXISTS devolucoes (
+        id           SERIAL PRIMARY KEY,
+        doacao_id    INTEGER NOT NULL REFERENCES doacoes(id) ON DELETE CASCADE,
+        ong          TEXT NOT NULL,
+        motivo       TEXT NOT NULL,
+        devolvida_em TEXT NOT NULL
+      )
+    `);
     return;
   }
 

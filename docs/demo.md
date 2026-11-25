@@ -114,6 +114,10 @@ Abra `http://<ip-do-computador>:3000` no navegador do celular (mesma rede Wi-Fi)
 - **Ação:** com `Casa Esperança` em **ONG atual**, digite `Rui` em **Voluntário que buscou** e clique **Confirmar Coleta** no “Bolo” em **Pendências de coleta da ONG**.
 - **Resultado esperado:** mensagem `Coleta confirmada por Rui para Casa Esperança.`; o “Bolo” sai das pendências e aparece em **Histórico de coletas** como `coletada por Rui em <horário>`; em **Minhas doações** da Padaria Pão Bom aparece `Bolo — 2 unidades: coletada por Rui em <horário>` (CA3).
 
+**H3 — a ONG devolve uma doação aceita**
+- **Ação:** em **ONG atual**, `Casa Esperança`; aceite o “Pão”. Em **Motivo**, digite `sem voluntário hoje` e clique **Devolver** no “Pão” em **Pendências de coleta da ONG**.
+- **Resultado esperado:** mensagem `Doação #<id> devolvida para a lista de disponíveis (motivo: sem voluntário hoje).`; o “Pão” volta para **Doações disponíveis** com o botão **Aceitar**, e em **Minhas doações** da padaria volta a `disponível` (sem o nome da ONG).
+
 ## Testado por
 
 Davi

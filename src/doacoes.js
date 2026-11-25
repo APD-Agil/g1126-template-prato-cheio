@@ -98,6 +98,32 @@ export async function confirmarColeta(id, { ong, voluntario } = {}) {
   return atualizada;
 }
 
+// H3 (Trabalho 3) — "a ONG devolve uma doação aceita": a doação volta para a lista
+// de disponíveis, sem a ONG, e o motivo fica registrado (docs/projeto.md, decisão 7).
+export async function devolver(id, { ong, motivo } = {}) {
+  if (typeof ong !== 'string' || !ong.trim()) {
+    throw new Error('Informe a ONG');
+  }
+
+  const doacao = await repo.buscarPorId(id);
+  if (!doacao) {
+    throw new Error('Doação não encontrada');
+  }
+  if (doacao.status !== 'aceita') {
+    throw new Error('Só é possível devolver uma doação aceita');
+  }
+  if (doacao.ong !== ong.trim()) {
+    throw new Error('Só a ONG que aceitou pode devolver a doação');
+  }
+
+  const devolvida = await repo.devolver(id, ong.trim(), motivo);
+  if (!devolvida) {
+    throw new Error('Só é possível devolver uma doação aceita');
+  }
+
+  return devolvida;
+}
+
 export async function listarPendencias(ong) {
   if (typeof ong !== 'string' || !ong.trim()) {
     throw new Error('Informe a ONG');
