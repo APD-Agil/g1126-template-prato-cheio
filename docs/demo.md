@@ -68,7 +68,7 @@ Execute os comandos abaixo no PowerShell, com `npm start` ativo. Eles usam o nom
    $ongUrl = [uri]::EscapeDataString($ong)
    ```
 
-   No navegador, atualize `http://localhost:3000`, digite `ONG Esperança` em **ONG atual** e clique **Aceitar** no card “Sopa”. A interface envia `POST /api/doacoes/$id/aceitar`. Resultado a conferir: mensagem `Reserva exclusiva confirmada para ONG Esperança.`, card removido da lista pública e botão **Confirmar Retirada** na pendência. Testes relacionados: `marca a doação como aceita pela ONG`, `remove a doação da lista de disponíveis depois de aceita` e `mostra confirmação de reserva exclusiva após aceitar`.
+   No navegador, atualize `http://localhost:3000`, digite `ONG Esperança` em **ONG atual** e clique **Aceitar** no card “Sopa”. A interface envia `POST /api/doacoes/$id/aceitar`. Resultado a conferir: mensagem `Reserva exclusiva confirmada para ONG Esperança.`, card removido da lista pública e botão **Confirmar Coleta** na pendência. Testes relacionados: `marca a doação como aceita pela ONG`, `remove a doação da lista de disponíveis depois de aceita` e `mostra confirmação de reserva exclusiva após aceitar`.
 
 4. Consulte as pendências dessa ONG:
 
@@ -81,11 +81,11 @@ Execute os comandos abaixo no PowerShell, com `npm start` ativo. Eles usam o nom
 5. Confirme a retirada e depois consulte as pendências e o histórico:
 
    ```powershell
-   $corpoRetirada = @{ ong = $ong } | ConvertTo-Json
-   Invoke-RestMethod -Method Post -Uri "http://localhost:3000/api/doacoes/$id/confirmar-retirada" -ContentType 'application/json' -Body $corpoRetirada
+   $corpoRetirada = @{ ong = $ong; voluntario = 'Rui' } | ConvertTo-Json
+   Invoke-RestMethod -Method Post -Uri "http://localhost:3000/api/doacoes/$id/confirmar-coleta" -ContentType 'application/json' -Body $corpoRetirada
    ```
 
-   Ou, na interface, clique **Confirmar Retirada**. Resultado a conferir: mensagem de confirmação, `status=concluida` e `concluida_em` preenchido.
+   Ou, na interface, digite `Rui` em **Voluntário que buscou** e clique **Confirmar Coleta**. Resultado a conferir: mensagem de confirmação, `status=coletada`, `voluntario=Rui` e `coletada_em` preenchido.
 
    Agora confirme a remoção das pendências e a presença no histórico:
 
@@ -94,7 +94,7 @@ Execute os comandos abaixo no PowerShell, com `npm start` ativo. Eles usam o nom
    Invoke-RestMethod -Method Get -Uri "http://localhost:3000/api/doacoes/historico?ong=$ongUrl"
    ```
 
-   Resultado a conferir: lista de pendências vazia e a doação no histórico. Testes relacionados: `conclui uma doação aceita, registra o encerramento e remove a pendência` e `mostra confirmação após concluir a retirada`.
+   Resultado a conferir: lista de pendências vazia e a doação no histórico. Testes relacionados: `conclui uma doação aceita, registra o encerramento e remove a pendência` e `H2: mostra confirmação após o voluntário confirmar a coleta`.
 
 6. Tente publicar validade de uma hora, na interface:
 
@@ -109,6 +109,10 @@ Abra `http://<ip-do-computador>:3000` no navegador do celular (mesma rede Wi-Fi)
 **H1 — o doador acompanha as suas doações**
 - **Ação:** em **Doador**, digite `Padaria Pão Bom`; publique `Pão / 20 unidades` e `Bolo / 2 unidades` com validade de 3 h. Em **ONG atual**, digite `Casa Esperança` e clique **Aceitar** no card “Bolo”.
 - **Resultado esperado:** em **Minhas doações** aparecem `Pão — 20 unidades: disponível` e `Bolo — 2 unidades: aceita por Casa Esperança`. Troque o doador para `Mercado Bom Preço`: a lista fica vazia (CA2). Apague o doador e clique **Publicar**: aparece `Informe o nome do doador` (CA3).
+
+**H2 — o voluntário confirma a coleta**
+- **Ação:** com `Casa Esperança` em **ONG atual**, digite `Rui` em **Voluntário que buscou** e clique **Confirmar Coleta** no “Bolo” em **Pendências de coleta da ONG**.
+- **Resultado esperado:** mensagem `Coleta confirmada por Rui para Casa Esperança.`; o “Bolo” sai das pendências e aparece em **Histórico de coletas** como `coletada por Rui em <horário>`; em **Minhas doações** da Padaria Pão Bom aparece `Bolo — 2 unidades: coletada por Rui em <horário>` (CA3).
 
 ## Testado por
 
