@@ -50,22 +50,58 @@ export async function listarDisponiveis() {
   return repo.listarDisponiveis();
 }
 
-// História 7 (★ história zero) — "uma ONG aceita um lote com exclusividade garantida".
-// Regra 2 (docs/analise.md): uma doação aceita sai da lista e não pode ser aceita de novo.
-export async function aceitar(id, ong) {
+// Refatoração 2 (docs/refatoracoes.md) — as transições permitidas (docs/projeto.md,
+// decisão 4) num só lugar. Cada operação diz de que estado parte e com que mensagem
+// recusa; `erroOng` existe quando só a ONG que aceitou pode fazer a operação.
+const TRANSICOES = {
+  aceitar: {
+    de: 'disponivel',
+    erro: 'Este lote já foi reservado por outra ONG'
+  },
+  coletar: {
+    de: 'aceita',
+    erro: 'Só é possível confirmar a retirada de uma doação aceita',
+    erroOng: 'Só a ONG que aceitou pode confirmar a retirada'
+  },
+  devolver: {
+    de: 'aceita',
+    erro: 'Só é possível devolver uma doação aceita',
+    erroOng: 'Só a ONG que aceitou pode devolver a doação'
+  }
+};
+
+// Busca a doação, recusa se não existe, confere se a transição é permitida e só então
+// chama `atualizar` (o UPDATE condicional do repositório). Se o UPDATE não afetar
+// nenhuma linha, outra requisição mudou a doação entre a busca e a escrita: recusa
+// com a mesma mensagem da transição proibida.
+async function transicionar(id, operacao, { ong, atualizar }) {
+  const transicao = TRANSICOES[operacao];
+
   const doacao = await repo.buscarPorId(id);
   if (!doacao) {
     throw new Error('Doação não encontrada');
   }
-
-  const atualizada = await repo.aceitar(id, ong);
-  if (!atualizada) {
-    // A busca acima encontrou a doação, mas o UPDATE não afetou nenhuma linha:
-    // outra ONG venceu a corrida (ou a própria já não está mais disponível).
-    throw new Error('Este lote já foi reservado por outra ONG');
+  if (doacao.status !== transicao.de) {
+    throw new Error(transicao.erro);
+  }
+  if (transicao.erroOng && doacao.ong !== ong) {
+    throw new Error(transicao.erroOng);
   }
 
+  const atualizada = await atualizar();
+  if (!atualizada) {
+    throw new Error(transicao.erro);
+  }
   return atualizada;
+}
+
+// História 7 (★ história zero) — "uma ONG aceita um lote com exclusividade garantida".
+// Regra 2 (docs/analise.md): uma doação aceita sai da lista e não pode ser aceita de novo.
+// A exclusividade sob concorrência vem do UPDATE ... WHERE status = 'disponivel'.
+export async function aceitar(id, ong) {
+  return transicionar(id, 'aceitar', {
+    atualizar: () => repo.aceitar(id, ong)
+  });
 }
 
 // H2 (Trabalho 3) — "o voluntário confirma a coleta". Evolui a confirmação de retirada
@@ -79,23 +115,10 @@ export async function confirmarColeta(id, { ong, voluntario } = {}) {
     throw new Error('Informe o nome do voluntário');
   }
 
-  const doacao = await repo.buscarPorId(id);
-  if (!doacao) {
-    throw new Error('Doação não encontrada');
-  }
-  if (doacao.status !== 'aceita') {
-    throw new Error('Só é possível confirmar a retirada de uma doação aceita');
-  }
-  if (doacao.ong !== ong.trim()) {
-    throw new Error('Só a ONG que aceitou pode confirmar a retirada');
-  }
-
-  const atualizada = await repo.confirmarColeta(id, ong.trim(), voluntario.trim());
-  if (!atualizada) {
-    throw new Error('Só é possível confirmar a retirada de uma doação aceita');
-  }
-
-  return atualizada;
+  return transicionar(id, 'coletar', {
+    ong: ong.trim(),
+    atualizar: () => repo.confirmarColeta(id, ong.trim(), voluntario.trim())
+  });
 }
 
 // H3 (Trabalho 3) — "a ONG devolve uma doação aceita": a doação volta para a lista
@@ -105,23 +128,10 @@ export async function devolver(id, { ong, motivo } = {}) {
     throw new Error('Informe a ONG');
   }
 
-  const doacao = await repo.buscarPorId(id);
-  if (!doacao) {
-    throw new Error('Doação não encontrada');
-  }
-  if (doacao.status !== 'aceita') {
-    throw new Error('Só é possível devolver uma doação aceita');
-  }
-  if (doacao.ong !== ong.trim()) {
-    throw new Error('Só a ONG que aceitou pode devolver a doação');
-  }
-
-  const devolvida = await repo.devolver(id, ong.trim(), motivo);
-  if (!devolvida) {
-    throw new Error('Só é possível devolver uma doação aceita');
-  }
-
-  return devolvida;
+  return transicionar(id, 'devolver', {
+    ong: ong.trim(),
+    atualizar: () => repo.devolver(id, ong.trim(), motivo)
+  });
 }
 
 export async function listarPendencias(ong) {
