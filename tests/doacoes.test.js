@@ -42,7 +42,7 @@ describe('publicar e listar doações', () => {
   it('mostra a doação publicada na lista de disponíveis', async () => {
     await request(app)
       .post('/api/doacoes')
-      .send({ tipo: 'Sopa', quantidade: '10 porções', validade: daquiA(3) });
+      .send({ tipo: 'Sopa', quantidade: '10 porções', validade: daquiA(3), doador: 'Padaria Teste' });
 
     const res = await request(app).get('/api/doacoes');
     expect(res.status).toBe(200);
@@ -62,7 +62,7 @@ describe('publicar e listar doações', () => {
 
     const validadePerto = await request(app)
       .post('/api/doacoes')
-      .send({ tipo: 'Sopa', quantidade: '10 porções', validade: daquiA(1) });
+      .send({ tipo: 'Sopa', quantidade: '10 porções', validade: daquiA(1), doador: 'Padaria Teste' });
     expect(validadePerto.status).toBe(400);
     expect(validadePerto.body.erro).toMatch(/no mínimo 2 horas/);
 
@@ -75,7 +75,7 @@ describe('aceitar uma doação', () => {
   async function publicarDoacao() {
     const res = await request(app)
       .post('/api/doacoes')
-      .send({ tipo: 'Pão', quantidade: '20 unidades', validade: daquiA(4) });
+      .send({ tipo: 'Pão', quantidade: '20 unidades', validade: daquiA(4), doador: 'Padaria Teste' });
     return res.body.id;
   }
 
@@ -127,7 +127,7 @@ describe('confirmar retirada e consultar pendências', () => {
   async function criarDoacaoAceita(ong = 'ONG Esperança') {
     const criada = await request(app)
       .post('/api/doacoes')
-      .send({ tipo: 'Sopa', quantidade: '10 porções', validade: daquiA(4) });
+      .send({ tipo: 'Sopa', quantidade: '10 porções', validade: daquiA(4), doador: 'Padaria Teste' });
     await request(app).post(`/api/doacoes/${criada.body.id}/aceitar`).send({ ong });
     return criada.body.id;
   }
@@ -161,7 +161,7 @@ describe('confirmar retirada e consultar pendências', () => {
   it('recusa confirmar uma doação que ainda não foi aceita', async () => {
     const criada = await request(app)
       .post('/api/doacoes')
-      .send({ tipo: 'Pão', quantidade: '20 unidades', validade: daquiA(4) });
+      .send({ tipo: 'Pão', quantidade: '20 unidades', validade: daquiA(4), doador: 'Padaria Teste' });
 
     const res = await request(app)
       .post(`/api/doacoes/${criada.body.id}/confirmar-retirada`)
@@ -214,12 +214,12 @@ describe('contar doações aceitas no mês', () => {
   it('retorna o total de doações aceitas no mês consultado', async () => {
     const id = await request(app)
       .post('/api/doacoes')
-      .send({ tipo: 'Arroz', quantidade: '5 kg', validade: daquiA(5) })
+      .send({ tipo: 'Arroz', quantidade: '5 kg', validade: daquiA(5), doador: 'Padaria Teste' })
       .then((res) => res.body.id);
     await request(app).post(`/api/doacoes/${id}/aceitar`).send({ ong: 'ONG Esperança' });
     await request(app)
       .post('/api/doacoes')
-      .send({ tipo: 'Feijão', quantidade: '3 kg', validade: daquiA(5) });
+      .send({ tipo: 'Feijão', quantidade: '3 kg', validade: daquiA(5), doador: 'Padaria Teste' });
 
     const mesAtual = new Date().toISOString().slice(0, 7);
     const res = await request(app)

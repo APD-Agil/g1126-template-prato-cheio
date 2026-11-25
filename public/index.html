@@ -23,6 +23,8 @@
 
   <fieldset>
     <legend>Publicar doação</legend>
+    <label for="doador">Doador (nome do estabelecimento)</label>
+    <input id="doador" placeholder="Ex.: Padaria Pão Bom" autocomplete="organization">
     <label for="tipo">Tipo de alimento</label>
     <input id="tipo" placeholder="Ex.: sopa, pão, frutas">
     <label for="quantidade">Quantidade</label>
@@ -35,6 +37,9 @@
   <label for="ong">ONG atual</label>
   <input id="ong" value="Minha ONG">
   <p id="mensagem" role="status" aria-live="polite"></p>
+
+  <h2>Minhas doações</h2>
+  <ul id="minhas"></ul>
 
   <h2>Doações disponíveis</h2>
   <ul id="lista"></ul>
@@ -58,8 +63,33 @@
       return corpo;
     }
 
+    // H1: sem login, o doador se identifica pelo nome digitado, guardado neste navegador.
+    const armazenamento = typeof localStorage !== 'undefined' ? localStorage : null;
+    const campoDoador = document.getElementById('doador');
+    if (armazenamento && armazenamento.getItem('doador')) {
+      campoDoador.value = armazenamento.getItem('doador');
+    }
+
+    async function carregarMinhas() {
+      const lista = document.getElementById('minhas');
+      const doador = campoDoador.value.trim();
+      if (!doador) {
+        lista.innerHTML = '<li>Informe o nome do doador para ver suas doações.</li>';
+        return;
+      }
+      const doacoes = await fetch(`/api/doacoes/minhas?doador=${encodeURIComponent(doador)}`)
+        .then(lerResposta);
+      lista.innerHTML = doacoes.length ? '' : '<li>Você ainda não publicou doações.</li>';
+      for (const doacao of doacoes) {
+        const li = document.createElement('li');
+        li.textContent = `${doacao.tipo} — ${doacao.quantidade}: ${doacao.situacao}`;
+        lista.appendChild(li);
+      }
+    }
+
     async function carregar() {
       try {
+        await carregarMinhas();
         const ong = document.getElementById('ong').value.trim();
         const [doacoes, pendencias, historico] = await Promise.all([
           fetch('/api/doacoes').then(lerResposta),
@@ -127,6 +157,10 @@
     }
 
     document.getElementById('ong').onchange = carregar;
+    campoDoador.onchange = () => {
+      if (armazenamento) armazenamento.setItem('doador', campoDoador.value.trim());
+      return carregar();
+    };
 
     document.getElementById('publicar').onclick = async () => {
       try {
@@ -136,7 +170,8 @@
           body: JSON.stringify({
             tipo: document.getElementById('tipo').value,
             quantidade: document.getElementById('quantidade').value,
-            validade: document.getElementById('validade').value
+            validade: document.getElementById('validade').value,
+            doador: campoDoador.value
           })
         }).then(lerResposta);
         mostrarMensagem(`Doação #${doacao.id} publicada com sucesso.`, 'sucesso');

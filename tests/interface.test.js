@@ -174,4 +174,46 @@ describe('feedback da interface', () => {
     expect(elementos.get('historico').children[0].textContent)
       .toContain('retirada confirmada em 2026-11-20 20:00:00');
   });
+
+  // H1 — tela "Minhas doações": o doador digita o nome e vê cada doação com a situação.
+  it('H1: mostra as doações do doador com a situação de cada uma', async () => {
+    const consultas = [];
+    const fetch = async (url) => {
+      if (url.startsWith('/api/doacoes/minhas?')) {
+        consultas.push(url);
+        return resposta(200, [
+          { id: 1, tipo: 'Pão', quantidade: '20 unidades', situacao: 'disponível' },
+          { id: 2, tipo: 'Bolo', quantidade: '2 unidades', situacao: 'aceita por Casa Esperança' }
+        ]);
+      }
+      if (url === '/api/doacoes') return resposta(200, []);
+      if (url.startsWith('/api/doacoes/pendencias?')) return resposta(200, []);
+      if (url.startsWith('/api/doacoes/historico?')) return resposta(200, []);
+      throw new Error(`Requisição inesperada: ${url}`);
+    };
+    const elementos = await abrirPagina(fetch);
+
+    elementos.get('doador').value = 'Padaria Pão Bom';
+    await elementos.get('doador').onchange();
+
+    expect(consultas).toEqual(['/api/doacoes/minhas?doador=Padaria%20P%C3%A3o%20Bom']);
+    const itens = elementos.get('minhas').children.map(({ textContent }) => textContent);
+    expect(itens).toEqual([
+      'Pão — 20 unidades: disponível',
+      'Bolo — 2 unidades: aceita por Casa Esperança'
+    ]);
+  });
+
+  it('H1: sem nome de doador, a tela pede o nome em vez de consultar', async () => {
+    const fetch = async (url) => {
+      if (url.startsWith('/api/doacoes/minhas?')) throw new Error('não deveria consultar');
+      if (url === '/api/doacoes') return resposta(200, []);
+      if (url.startsWith('/api/doacoes/pendencias?')) return resposta(200, []);
+      if (url.startsWith('/api/doacoes/historico?')) return resposta(200, []);
+      throw new Error(`Requisição inesperada: ${url}`);
+    };
+    const elementos = await abrirPagina(fetch);
+
+    expect(elementos.get('minhas').innerHTML).toBe('<li>Informe o nome do doador para ver suas doações.</li>');
+  });
 });

@@ -1,14 +1,23 @@
 import { query } from './db.js';
 
 // Insere a doação e devolve a linha criada.
-export async function inserir({ tipo, quantidade, validade }) {
+export async function inserir({ tipo, quantidade, validade, doador }) {
   const { rows } = await query(
-    `INSERT INTO doacoes (tipo, quantidade, validade)
-     VALUES ($1, $2, $3)
+    `INSERT INTO doacoes (tipo, quantidade, validade, doador)
+     VALUES ($1, $2, $3, $4)
      RETURNING *`,
-    [tipo, quantidade, validade]
+    [tipo, quantidade, validade, doador]
   );
   return rows[0];
+}
+
+// H1: todas as doações de um doador, em qualquer estado, das mais novas para as mais antigas.
+export async function listarPorDoador(doador) {
+  const { rows } = await query(
+    `SELECT * FROM doacoes WHERE doador = $1 ORDER BY criada_em DESC, id DESC`,
+    [doador]
+  );
+  return rows;
 }
 
 export async function listarDisponiveis() {
