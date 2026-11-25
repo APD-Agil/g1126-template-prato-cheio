@@ -127,10 +127,13 @@ export async function devolver(id, { ong, motivo } = {}) {
   if (typeof ong !== 'string' || !ong.trim()) {
     throw new Error('Informe a ONG');
   }
+  if (typeof motivo !== 'string' || !motivo.trim()) {
+    throw new Error('Informe o motivo da devolução');
+  }
 
   return transicionar(id, 'devolver', {
     ong: ong.trim(),
-    atualizar: () => repo.devolver(id, ong.trim(), motivo)
+    atualizar: () => repo.devolver(id, ong.trim(), motivo.trim())
   });
 }
 
