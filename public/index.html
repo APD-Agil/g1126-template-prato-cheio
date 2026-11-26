@@ -38,6 +38,8 @@
   <input id="ong" value="Minha ONG">
   <label for="voluntario">Voluntário que buscou (primeiro nome)</label>
   <input id="voluntario" placeholder="Ex.: Rui">
+  <label for="motivo">Motivo, se a ONG for devolver uma doação</label>
+  <input id="motivo" placeholder="Ex.: sem voluntário hoje">
   <p id="mensagem" role="status" aria-live="polite"></p>
 
   <h2>Minhas doações</h2>
@@ -121,6 +123,12 @@
             ? confirmarColeta(doacao.id)
             : aceitar(doacao.id);
           li.appendChild(botao);
+          if (acao === 'confirmar') {
+            const devolverBotao = document.createElement('button');
+            devolverBotao.textContent = 'Devolver';
+            devolverBotao.onclick = () => devolver(doacao.id);
+            li.appendChild(devolverBotao);
+          }
         }
         lista.appendChild(li);
       }
@@ -152,6 +160,23 @@
           body: JSON.stringify({ ong, voluntario })
         }).then(lerResposta);
         mostrarMensagem(`Coleta confirmada por ${doacao.voluntario} para ${doacao.ong}.`, 'sucesso');
+        await carregar();
+      } catch (erro) {
+        mostrarMensagem(erro.message, 'erro');
+        await carregar();
+      }
+    }
+
+    async function devolver(id) {
+      try {
+        const ong = document.getElementById('ong').value.trim();
+        const motivo = document.getElementById('motivo').value.trim();
+        const doacao = await fetch(`/api/doacoes/${id}/devolver`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ong, motivo })
+        }).then(lerResposta);
+        mostrarMensagem(`Doação #${doacao.id} devolvida para a lista de disponíveis (motivo: ${doacao.motivo}).`, 'sucesso');
         await carregar();
       } catch (erro) {
         mostrarMensagem(erro.message, 'erro');

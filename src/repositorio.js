@@ -56,6 +56,25 @@ export async function confirmarColeta(id, ong, voluntario) {
   return rows[0];
 }
 
+// H3: devolver e registrar o motivo numa única instrução (atômica). A doação
+// volta para `disponivel` sem ONG nem aceite; o registro guarda quem devolveu.
+export async function devolver(id, ong, motivo) {
+  const { rows } = await query(
+    `WITH devolvida AS (
+       UPDATE doacoes SET status = 'disponivel', ong = NULL, aceita_em = NULL
+       WHERE id = $1 AND ong = $2 AND status = 'aceita'
+       RETURNING *
+     ), registro AS (
+       INSERT INTO devolucoes (doacao_id, ong, motivo, devolvida_em)
+       SELECT id, $2, $3, to_char(now(), 'YYYY-MM-DD HH24:MI:SS') FROM devolvida
+       RETURNING motivo, devolvida_em
+     )
+     SELECT devolvida.*, registro.motivo, registro.devolvida_em FROM devolvida, registro`,
+    [id, ong, motivo]
+  );
+  return rows[0];
+}
+
 export async function listarPendencias(ong) {
   const { rows } = await query(
     `SELECT * FROM doacoes

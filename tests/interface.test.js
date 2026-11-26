@@ -222,4 +222,36 @@ describe('feedback da interface', () => {
 
     expect(elementos.get('minhas').innerHTML).toBe('<li>Informe o nome do doador para ver suas doações.</li>');
   });
+
+  // H3 — a ONG devolve, pela tela de pendências, uma doação que aceitou.
+  it('H3: devolve uma pendência com o motivo e mostra a confirmação', async () => {
+    let pendencias = 0;
+    let corpoEnviado;
+    const fetch = async (url, options = {}) => {
+      if (url === '/api/doacoes/5/devolver' && options.method === 'POST') {
+        corpoEnviado = JSON.parse(options.body);
+        return resposta(200, { id: 5, status: 'disponivel', ong: null, motivo: 'sem voluntário hoje' });
+      }
+      if (url === '/api/doacoes') return resposta(200, []);
+      if (url.startsWith('/api/doacoes/pendencias?')) {
+        pendencias += 1;
+        return resposta(200, pendencias === 1
+          ? [{ id: 5, tipo: 'Pão', quantidade: '20 unidades', validade: '2099-01-01' }]
+          : []);
+      }
+      if (url.startsWith('/api/doacoes/historico?')) return resposta(200, []);
+      throw new Error(`Requisição inesperada: ${url}`);
+    };
+    const elementos = await abrirPagina(fetch);
+    elementos.set('motivo', Object.assign(new ElementFalso('motivo'), { value: 'sem voluntário hoje' }));
+
+    const [, botaoDevolver] = elementos.get('pendencias').children[0].children;
+    expect(botaoDevolver.textContent).toBe('Devolver');
+    await botaoDevolver.onclick();
+
+    expect(corpoEnviado).toEqual({ ong: 'Minha ONG', motivo: 'sem voluntário hoje' });
+    expect(elementos.get('mensagem').textContent)
+      .toBe('Doação #5 devolvida para a lista de disponíveis (motivo: sem voluntário hoje).');
+    expect(elementos.get('mensagem').className).toBe('sucesso');
+  });
 });

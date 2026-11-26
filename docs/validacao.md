@@ -25,6 +25,7 @@ Os textos da tabela reproduzem os oito critérios da seção **Critérios de ace
 | H2-CA1 | Dado que a "Casa Esperança" aceitou uma doação, quando o voluntário "Rui" confirma a coleta, então ela passa a *coletada*, com o nome do voluntário e o horário da coleta. | atende | `tests/h2-coleta.test.js`: `CA1: a coleta confirmada grava coletada, o voluntário e o horário`; `tests/interface.test.js`: `H2: mostra confirmação após o voluntário confirmar a coleta`; `docs/demo.md`, passo H2. |
 | H2-CA2 | Dado que a doação ainda está *disponível*, quando alguém tenta confirmar a coleta, então a confirmação é recusada com mensagem e a doação não muda. | atende | `tests/h2-coleta.test.js`: `CA2: recusa confirmar a coleta de uma doação disponível e não a altera`; inversão de regra no PR da H2: 2 testes vermelhos. |
 | H2-CA3 | Dado que a doação foi coletada, quando o doador consulta as suas doações (H1), então ela aparece como *coletada*. | atende | `tests/h2-coleta.test.js`: `CA3: a doação coletada aparece como coletada para o doador`. |
+| H3-CA1 | Dado que a "Casa Esperança" aceitou uma doação, quando ela a devolve com o motivo "sem voluntário hoje", então a doação volta para a lista de disponíveis, sem ONG, e o motivo fica registrado. | atende | `tests/h3-devolucao.test.js`: `CA1: a doação devolvida volta inteira para a lista, sem ONG, e o motivo fica registrado`; `tests/interface.test.js`: `H3: devolve uma pendência com o motivo e mostra a confirmação`; `docs/demo.md`, passo H3. |
 
 ## Resultados dos testes executados
 
