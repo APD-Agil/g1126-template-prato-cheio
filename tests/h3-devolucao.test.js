@@ -43,4 +43,58 @@ describe('H3 · a ONG devolve uma doação aceita', () => {
     const { rows } = await query('SELECT doacao_id, ong, motivo FROM devolucoes');
     expect(rows).toEqual([{ doacao_id: id, ong: 'Casa Esperança', motivo: 'sem voluntário hoje' }]);
   });
+
+  // CA2 — Dado que a doação já foi coletada, quando a ONG tenta devolvê-la,
+  // então a devolução é recusada com mensagem.
+  it('CA2: recusa devolver uma doação já coletada e ela continua coletada', async () => {
+    const id = await publicarAceita();
+    await request(app)
+      .post(`/api/doacoes/${id}/confirmar-coleta`)
+      .send({ ong: 'Casa Esperança', voluntario: 'Rui' });
+
+    const res = await devolver(id);
+
+    expect(res.status).toBe(400);
+    expect(res.body.erro).toBe('Só é possível devolver uma doação aceita');
+    const { rows } = await query('SELECT status, ong FROM doacoes WHERE id = $1', [id]);
+    expect(rows).toEqual([{ status: 'coletada', ong: 'Casa Esperança' }]);
+    expect((await query('SELECT COUNT(*)::int AS total FROM devolucoes')).rows[0].total).toBe(0);
+  });
+
+  // CA3 — Dado que a "Casa Esperança" aceitou a doação, quando outra ONG tenta devolvê-la,
+  // então a devolução é recusada e a doação continua aceita pela Casa Esperança.
+  it('CA3: recusa a devolução por outra ONG e a doação continua aceita pela Casa Esperança', async () => {
+    const id = await publicarAceita('Casa Esperança');
+
+    const res = await devolver(id, { ong: 'ONG Mãos Solidárias', motivo: 'engano' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.erro).toBe('Só a ONG que aceitou pode devolver a doação');
+    const pendencias = await request(app).get('/api/doacoes/pendencias').query({ ong: 'Casa Esperança' });
+    expect(pendencias.body).toMatchObject([{ id, status: 'aceita', ong: 'Casa Esperança' }]);
+  });
+
+  // Limite — decisão do grupo: o motivo é obrigatório; sem ele, nada muda e nada é registrado.
+  it('limite: recusa devolver sem motivo e a doação continua aceita', async () => {
+    const id = await publicarAceita();
+
+    const res = await devolver(id, { ong: 'Casa Esperança', motivo: '   ' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.erro).toBe('Informe o motivo da devolução');
+    const pendencias = await request(app).get('/api/doacoes/pendencias').query({ ong: 'Casa Esperança' });
+    expect(pendencias.body.map(({ id: pendente }) => pendente)).toEqual([id]);
+    expect((await query('SELECT COUNT(*)::int AS total FROM devolucoes')).rows[0].total).toBe(0);
+  });
+
+  // Decisão do grupo: a ONG que devolveu pode aceitar a mesma doação de novo.
+  it('decisão: a ONG que devolveu pode aceitar a mesma doação de novo', async () => {
+    const id = await publicarAceita('Casa Esperança');
+    await devolver(id);
+
+    const res = await request(app).post(`/api/doacoes/${id}/aceitar`).send({ ong: 'Casa Esperança' });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ id, status: 'aceita', ong: 'Casa Esperança' });
+  });
 });
