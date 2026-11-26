@@ -15,16 +15,17 @@ Conecta doadores de alimentos excedentes a ONGs, antes que a comida se perca.
 
 ## Donos e revisores (Trabalho 3)
 
-Cada história tem um dono e um revisor diferentes. Em grupo de 5, a quinta pessoa é dona do fechamento.
+Dono é quem abriu o PR. Revisor é quem aprovou o PR no GitHub, sempre outra pessoa.
 
-| Item | Dono | Revisor |
-|---|---|---|
-| Iteração 0 — estados da doação e base | Willian Vinicius Ramalho | Pedro Henrique Coppola |
-| H1 · O doador acompanha as suas doações | Willian Vinicius Ramalho | Davi Rudinei Peres |
-| H2 · O voluntário confirma a coleta | Otavio Santana Possenti | Henrique Osmar Adelino |
-| H3 · A ONG devolve uma doação aceita + Refatoração 2 | Davi Rudinei Peres | Pedro Henrique Coppola |
-| H4 · A Marta vê o resultado do mês | Pedro Henrique Coppola | Otavio Santana Possenti |
-| Fechamento (validação, demo, retrospectiva, `entrega-3`) | Henrique Osmar Adelino | Willian Vinicius Ramalho |
+| Item | PR | Dono | Revisor |
+|---|---|---|---|
+| Iteração 0 — estados da doação e base | [#12](https://github.com/APD-Agil/g1126-template-prato-cheio/pull/12) | Willian Vinicius Ramalho | Henrique Osmar Adelino |
+| H1 · O doador acompanha as suas doações | [#13](https://github.com/APD-Agil/g1126-template-prato-cheio/pull/13) | Willian Vinicius Ramalho | Henrique Osmar Adelino |
+| H2 · O voluntário confirma a coleta | [#14](https://github.com/APD-Agil/g1126-template-prato-cheio/pull/14) | Willian Vinicius Ramalho | Henrique Osmar Adelino |
+| H3 · A ONG devolve uma doação aceita | [#15](https://github.com/APD-Agil/g1126-template-prato-cheio/pull/15), [#17](https://github.com/APD-Agil/g1126-template-prato-cheio/pull/17) | Willian Vinicius Ramalho | Henrique Osmar Adelino |
+| Refatoração 2 (revisão completa) | [#16](https://github.com/APD-Agil/g1126-template-prato-cheio/pull/16) | Willian Vinicius Ramalho | Henrique Osmar Adelino |
+| H4 · A Marta vê o resultado do mês | [#18](https://github.com/APD-Agil/g1126-template-prato-cheio/pull/18) | Willian Vinicius Ramalho | Henrique Osmar Adelino |
+| Fechamento (validação, demo, retrospectiva, `entrega-3`) | [#19](https://github.com/APD-Agil/g1126-template-prato-cheio/pull/19) | Willian Vinicius Ramalho | Henrique Osmar Adelino |
 
 ## Como rodar
 
