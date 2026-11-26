@@ -15,6 +15,14 @@ Os textos da tabela reproduzem os oito critérios da seção **Critérios de ace
 | 7 | Dado uma doação aceita pela ONG A, quando a ONG B tenta confirmar a retirada, então o sistema recusa e a doação continua aceita pela ONG A. | atende | `tests/doacoes.test.js`: `recusa a confirmação por uma ONG diferente e preserva a ONG aceita`; passou no `npm test` local (17/17). |
 | 8 | Dado que a ONG aceitou dois lotes e confirmou a retirada de um, quando ela abre suas pendências, então vê só o lote ainda não retirado. | atende | `tests/doacoes.test.js`: `lista somente as doações aceitas ainda pendentes para a ONG informada`; passou no `npm test` local (17/17), verificando ONG, status e exclusão da concluída. |
 
+### Critérios das histórias do Trabalho 3
+
+| # | Critério de aceite (enunciado do Trabalho 3) | Status | Evidência |
+|:--:|---|:--:|---|
+| H1-CA1 | Dado que a "Padaria Pão Bom" publicou duas doações e a "Casa Esperança" aceitou uma delas, quando a padaria consulta as suas doações, então vê as duas: uma disponível e outra aceita por Casa Esperança. | atende | `tests/h1-doador.test.js`: `CA1: o doador vê as próprias doações com a situação de cada uma`; `tests/interface.test.js`: `H1: mostra as doações do doador com a situação de cada uma`; `docs/demo.md`, passo H1. |
+| H1-CA2 | Dado que outro doador publicou uma doação, quando a "Padaria Pão Bom" consulta as suas, então essa doação não aparece. | atende | `tests/h1-doador.test.js`: `CA2: a doação de outro doador não aparece na consulta da padaria`. |
+| H1-CA3 | Dado que o doador não é informado na publicação, quando a doação é enviada, então ela é recusada com uma mensagem clara e nada é gravado. | atende | `tests/h1-doador.test.js`: `CA3: recusa a publicação sem doador e não grava nada` (400, `Informe o nome do doador`, 0 linhas no banco). |
+
 ## Resultados dos testes executados
 
 `npm ci` concluiu (`added 150 packages`) e reportou 11 vulnerabilidades de dependências (4 moderadas, 4 altas e 3 críticas); nenhuma correção de dependência foi tentada nesta entrega. Com `DATABASE_URL=postgres://pratocheio:pratocheio@localhost:5432/pratocheio`, `npm run db:migrar` imprimiu `schema criado` e `npm test` terminou com **3 arquivos aprovados e 17 testes aprovados**.
@@ -37,3 +45,7 @@ No CI do commit `a31a2ec`, o job [build-e-testes, run 32](https://github.com/APD
 ## Uso de IA
 
 A IA implementou confirmação, pendências e histórico, atualizou o feedback da interface, escreveu testes e atualizou a documentação do modelo e da validação. A primeira execução da suíte com os testes de interface identificou dois mocks com URLs incorretas; os mocks foram corrigidos e a repetição passou. Uma primeira tentativa de smoke com `curl.exe` enviou JSON malformado; a repetição com `fetch` validou HTTP 400 e a mensagem correta. `npm test` passou localmente contra PostgreSQL. Os testes de interface usam DOM simulado, não navegador real. Ainda faltam: um integrante executar `docs/demo.md` no navegador e a revisão humana sobre a limitação de identidade da ONG, que afeta o critério 2.
+
+## Limitações do produto
+
+- **Identidade sem login:** o doador é identificado pelo nome digitado (guardado no navegador) e a ONG pelo nome enviado pelo cliente; quem digitar o mesmo nome vê as mesmas doações. O login foi adiado pelo Conflito 1 de `docs/analise.md`.

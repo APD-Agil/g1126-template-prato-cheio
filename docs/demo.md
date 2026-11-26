@@ -102,6 +102,14 @@ Execute os comandos abaixo no PowerShell, com `npm start` ativo. Eles usam o nom
    - Informe em **Validade / retirar até** um horário de uma hora à frente e clique **Publicar**.
    -    Resultado a conferir: a interface exibe `O prazo de validade deve ser de no mínimo 2 horas a partir de agora`. O teste da API é `recusa publicação sem campos obrigatórios ou com validade curta`; o teste de interface é `mostra o erro retornado pela API ao recusar validade curta`.
 
+## Passos das histórias do Trabalho 3 (no navegador do celular)
+
+Abra `http://<ip-do-computador>:3000` no navegador do celular (mesma rede Wi-Fi) ou use o modo responsivo do navegador com largura de 360 px.
+
+**H1 — o doador acompanha as suas doações**
+- **Ação:** em **Doador**, digite `Padaria Pão Bom`; publique `Pão / 20 unidades` e `Bolo / 2 unidades` com validade de 3 h. Em **ONG atual**, digite `Casa Esperança` e clique **Aceitar** no card “Bolo”.
+- **Resultado esperado:** em **Minhas doações** aparecem `Pão — 20 unidades: disponível` e `Bolo — 2 unidades: aceita por Casa Esperança`. Troque o doador para `Mercado Bom Preço`: a lista fica vazia (CA2). Apague o doador e clique **Publicar**: aparece `Informe o nome do doador` (CA3).
+
 ## Testado por
 
 Davi

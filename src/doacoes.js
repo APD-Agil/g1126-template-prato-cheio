@@ -6,10 +6,12 @@ const DUAS_HORAS_EM_MS = 2 * 60 * 60 * 1000;
 
 // História 6 — "um doador publica uma doação" (fatia mínima: tipo, quantidade e validade).
 // Regra 1 (docs/analise.md): a validade deve ter no mínimo 2 horas a partir de agora.
-export async function criarDoacao({ tipo, quantidade, validade }) {
+// H1 (Trabalho 3): o doador é obrigatório — sem ele a doação é recusada e nada é gravado.
+export async function criarDoacao({ tipo, quantidade, validade, doador }) {
   if (!tipo || !quantidade || !validade) {
     throw new Error('Os campos tipo, quantidade e validade são obrigatórios');
   }
+  const nomeDoador = exigirDoador(doador);
 
   const dataValidade = new Date(validade);
   if (Number.isNaN(dataValidade.getTime())) {
@@ -19,7 +21,27 @@ export async function criarDoacao({ tipo, quantidade, validade }) {
     throw new Error('O prazo de validade deve ser de no mínimo 2 horas a partir de agora');
   }
 
-  return repo.inserir({ tipo, quantidade, validade });
+  return repo.inserir({ tipo, quantidade, validade, doador: nomeDoador });
+}
+
+function exigirDoador(doador) {
+  if (typeof doador !== 'string' || !doador.trim()) {
+    throw new Error('Informe o nome do doador');
+  }
+  return doador.trim();
+}
+
+// Texto que o doador lê para cada estado (docs/projeto.md, decisão 4).
+export function situacao(doacao) {
+  if (doacao.status === 'aceita') return `aceita por ${doacao.ong}`;
+  if (doacao.status === 'disponivel') return 'disponível';
+  return doacao.status;
+}
+
+// H1 — "o doador acompanha as suas doações": todas as dele, com a situação de cada uma.
+export async function listarDoDoador(doador) {
+  const doacoes = await repo.listarPorDoador(exigirDoador(doador));
+  return doacoes.map((doacao) => ({ ...doacao, situacao: situacao(doacao) }));
 }
 
 // História zero — "uma ONG vê as doações disponíveis".

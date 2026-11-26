@@ -23,6 +23,9 @@ const MODO = DATABASE_FILE ? 'sqlite' : 'postgres';
 let pool;
 let sqliteDb;
 
+// Doador atribuído às doações publicadas antes da H1 (docs/projeto.md, decisão 5).
+export const DOADOR_PADRAO = 'Doador não identificado (antes da H1)';
+
 function conexaoPostgres() {
   if (!pool) {
     if (!DATABASE_URL) {
@@ -80,6 +83,14 @@ export async function migrar() {
     // bancos criados antes dela existir, sem precisar de uma migração separada.
     await conexaoPostgres().query(`ALTER TABLE doacoes ADD COLUMN IF NOT EXISTS aceita_em TEXT`);
     await conexaoPostgres().query(`ALTER TABLE doacoes ADD COLUMN IF NOT EXISTS concluida_em TEXT`);
+    // H1: a doação passa a saber quem a publicou. As doações publicadas antes
+    // disso recebem um doador padrão explícito (decisão 5 de docs/projeto.md):
+    // continuam rastreáveis e contando no resultado do mês, sem fingir um dono.
+    await conexaoPostgres().query(`ALTER TABLE doacoes ADD COLUMN IF NOT EXISTS doador TEXT`);
+    await conexaoPostgres().query(
+      `UPDATE doacoes SET doador = $1 WHERE doador IS NULL`,
+      [DOADOR_PADRAO]
+    );
     return;
   }
 
