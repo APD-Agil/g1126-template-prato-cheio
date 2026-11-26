@@ -48,8 +48,6 @@ npm run db:migrar  # cria/atualiza o schema no PostgreSQL
 npm start          # sobe em http://localhost:3000
 ```
 
-No macOS/Linux (bash/zsh), troque a primeira linha por `export DATABASE_URL=postgres://pratocheio:pratocheio@localhost:5432/pratocheio` e rode os mesmos três comandos.
-
 Em outro terminal, com o mesmo `DATABASE_URL`, rode `npm test`. Para desenvolvimento com recarga automática, use `npm run dev`. A aplicação também migra o schema ao iniciar.
 
 Os testes usam o PostgreSQL configurado pelo Vitest; no CI, o workflow sobe um serviço PostgreSQL 16 isolado.
@@ -113,9 +111,9 @@ peça a revisão de **outro integrante**. Só então faça o merge.
 
 ## O que já está pronto e o que falta
 
-Pronto (Trabalho 3): a vida inteira de uma doação. O doador publica e acompanha as suas doações (H1). A ONG aceita com exclusividade. O voluntário confirma a coleta com nome e horário (H2). A ONG pode devolver uma doação aceita, com motivo (H3). A Marta vê o resultado do mês: publicadas, aceitas, coletadas, devoluções e tempo médio até a coleta (H4). Os estados e as transições estão na decisão 4 de `docs/projeto.md`. A validação está em `docs/validacao.md` e a demo em `docs/demo.md`.
+Pronto: estrutura do projeto, interface básica, rota de saúde, **conexão PostgreSQL e schema** (`src/db.js`), publicação/listagem/aceite de doações, confirmação da retirada, pendências/histórico por ONG, validação de validade mínima, relatório mensal e CI configurado. A interface também mostra feedback de sucesso e erro para publicação e aceite. Os testes automatizados estão em `tests/`.
 
-Falta (ver `docs/validacao.md` → Limitações do produto): login de doador e ONG (hoje vale o nome digitado), baixa automática de doações vencidas e relatório no horário de Brasília.
+As rotas de ONG recebem o nome informado pelo cliente; este incremento não adiciona autenticação. Para o fluxo implementado e suas limitações, veja `docs/analise.md` e `docs/validacao.md`.
 
 ## Uso de IA
 
