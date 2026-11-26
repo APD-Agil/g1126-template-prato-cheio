@@ -143,12 +143,15 @@ describe('feedback da interface', () => {
     expect(elementos.get('mensagem').className).toBe('erro');
   });
 
-  it('mostra confirmação após concluir a retirada', async () => {
+  // H2 — o voluntário confirma a coleta pela tela de pendências da ONG.
+  it('H2: mostra confirmação após o voluntário confirmar a coleta', async () => {
     let carregamentos = 0;
     let historicos = 0;
+    let corpoEnviado;
     const fetch = async (url, options = {}) => {
-      if (url === '/api/doacoes/9/confirmar-retirada') {
-        return resposta(200, { id: 9, ong: 'Minha ONG', status: 'concluida' });
+      if (url === '/api/doacoes/9/confirmar-coleta' && options.method === 'POST') {
+        corpoEnviado = JSON.parse(options.body);
+        return resposta(200, { id: 9, ong: 'Minha ONG', status: 'coletada', voluntario: 'Rui' });
       }
       if (url === '/api/doacoes') return resposta(200, []);
       if (url.startsWith('/api/doacoes/pendencias?')) {
@@ -161,18 +164,21 @@ describe('feedback da interface', () => {
         historicos += 1;
         return resposta(200, historicos === 1
           ? []
-          : [{ id: 9, tipo: 'Arroz', quantidade: '5 kg', concluida_em: '2026-11-20 20:00:00' }]);
+          : [{ id: 9, tipo: 'Arroz', quantidade: '5 kg', voluntario: 'Rui', coletada_em: '2026-11-20 20:00:00' }]);
       }
       throw new Error(`Requisição inesperada: ${url}`);
     };
     const elementos = await abrirPagina(fetch);
+    // O campo só é lido no clique; o DOM falso cria o elemento quando o script o pede.
+    elementos.set('voluntario', Object.assign(new ElementFalso('voluntario'), { value: 'Rui' }));
 
     await elementos.get('pendencias').children[0].children[0].onclick();
 
-    expect(elementos.get('mensagem').textContent).toBe('Retirada confirmada para Minha ONG.');
+    expect(corpoEnviado).toEqual({ ong: 'Minha ONG', voluntario: 'Rui' });
+    expect(elementos.get('mensagem').textContent).toBe('Coleta confirmada por Rui para Minha ONG.');
     expect(elementos.get('mensagem').className).toBe('sucesso');
     expect(elementos.get('historico').children[0].textContent)
-      .toContain('retirada confirmada em 2026-11-20 20:00:00');
+      .toBe('Arroz — 5 kg (coletada por Rui em 2026-11-20 20:00:00)');
   });
 
   // H1 — tela "Minhas doações": o doador digita o nome e vê cada doação com a situação.

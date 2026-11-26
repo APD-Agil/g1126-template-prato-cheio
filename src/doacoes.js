@@ -35,6 +35,7 @@ function exigirDoador(doador) {
 export function situacao(doacao) {
   if (doacao.status === 'aceita') return `aceita por ${doacao.ong}`;
   if (doacao.status === 'disponivel') return 'disponível';
+  if (doacao.status === 'coletada') return `coletada por ${doacao.voluntario} em ${doacao.coletada_em}`;
   return doacao.status;
 }
 
@@ -67,9 +68,15 @@ export async function aceitar(id, ong) {
   return atualizada;
 }
 
-export async function confirmarRetirada(id, ong) {
+// H2 (Trabalho 3) — "o voluntário confirma a coleta". Evolui a confirmação de retirada
+// da História 8: a doação vai de `aceita` para `coletada`, com o voluntário e o horário.
+// Decisões: o nome do voluntário é obrigatório; confirmar duas vezes é recusado.
+export async function confirmarColeta(id, { ong, voluntario } = {}) {
   if (typeof ong !== 'string' || !ong.trim()) {
     throw new Error('Informe a ONG');
+  }
+  if (typeof voluntario !== 'string' || !voluntario.trim()) {
+    throw new Error('Informe o nome do voluntário');
   }
 
   const doacao = await repo.buscarPorId(id);
@@ -83,7 +90,7 @@ export async function confirmarRetirada(id, ong) {
     throw new Error('Só a ONG que aceitou pode confirmar a retirada');
   }
 
-  const atualizada = await repo.confirmarRetirada(id, ong.trim());
+  const atualizada = await repo.confirmarColeta(id, ong.trim(), voluntario.trim());
   if (!atualizada) {
     throw new Error('Só é possível confirmar a retirada de uma doação aceita');
   }

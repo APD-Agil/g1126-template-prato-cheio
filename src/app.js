@@ -57,9 +57,9 @@ export function criarApp() {
     }
   });
 
-  app.post('/api/doacoes/:id/confirmar-retirada', async (req, res) => {
+  app.post('/api/doacoes/:id/confirmar-coleta', async (req, res) => {
     try {
-      res.json(await doacoes.confirmarRetirada(req.params.id, req.body?.ong));
+      res.json(await doacoes.confirmarColeta(req.params.id, req.body ?? {}));
     } catch (erro) {
       res.status(400).json({ erro: erro.message });
     }
