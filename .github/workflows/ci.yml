@@ -4,8 +4,11 @@ name: CI
 # O PR só deve ser integrado com este check verde.
 on:
   push:
-    branches: [main]
+    # entrega-3: a entrega do Trabalho 3 pede o link de uma execução verde neste branch.
+    branches: [main, entrega-3]
   pull_request:
+  # Permite rodar o CI manualmente pela aba Actions (botão "Run workflow").
+  workflow_dispatch:
 
 jobs:
   build-e-testes:
