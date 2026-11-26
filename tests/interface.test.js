@@ -254,4 +254,28 @@ describe('feedback da interface', () => {
       .toBe('Doação #5 devolvida para a lista de disponíveis (motivo: sem voluntário hoje).');
     expect(elementos.get('mensagem').className).toBe('sucesso');
   });
+
+  // H4 — a Marta escolhe o mês e vê o resultado.
+  it('H4: mostra o resultado do mês escolhido pela Marta', async () => {
+    const fetch = async (url) => {
+      if (url === '/api/relatorios/mes?mes=2025-11') {
+        return resposta(200, {
+          mes: '2025-11', publicadas: 3, aceitas: 2, coletadas: 1, devolucoes: 0,
+          tempoMedioAteColetaHoras: 5, tempoMedioAteColeta: '5 h'
+        });
+      }
+      if (url === '/api/doacoes') return resposta(200, []);
+      if (url.startsWith('/api/doacoes/pendencias?')) return resposta(200, []);
+      if (url.startsWith('/api/doacoes/historico?')) return resposta(200, []);
+      throw new Error(`Requisição inesperada: ${url}`);
+    };
+    const elementos = await abrirPagina(fetch);
+    elementos.set('mes', Object.assign(new ElementFalso('mes'), { value: '2025-11' }));
+
+    await elementos.get('ver-resultado').onclick();
+
+    expect(elementos.get('resultado').textContent).toBe(
+      '2025-11: 3 publicadas · 2 aceitas · 1 coletadas · 0 devoluções · tempo médio até a coleta: 5 h'
+    );
+  });
 });

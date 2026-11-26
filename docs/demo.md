@@ -118,6 +118,10 @@ Abra `http://<ip-do-computador>:3000` no navegador do celular (mesma rede Wi-Fi)
 - **Ação:** em **ONG atual**, `Casa Esperança`; aceite o “Pão”. Em **Motivo**, digite `sem voluntário hoje` e clique **Devolver** no “Pão” em **Pendências de coleta da ONG**.
 - **Resultado esperado:** mensagem `Doação #<id> devolvida para a lista de disponíveis (motivo: sem voluntário hoje).`; o “Pão” volta para **Doações disponíveis** com o botão **Aceitar**, e em **Minhas doações** da padaria volta a `disponível` (sem o nome da ONG).
 
+**H4 — a Marta vê o resultado do mês**
+- **Ação:** em **Resultado do mês (coordenação)**, escolha o mês corrente e clique **Ver resultado**.
+- **Resultado esperado:** uma linha como `AAAA-MM: N publicadas · N aceitas · N coletadas · N devoluções · tempo médio até a coleta: X h`, com os números da demo (o “Bolo” coletado entra no tempo médio; o “Pão” devolvido aparece em devoluções). Escolha um mês sem doações: `tempo médio até a coleta: sem coletas no mês`.
+
 ## Testado por
 
 Davi

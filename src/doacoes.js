@@ -163,3 +163,26 @@ export async function contarAceitasNoMes(mes) {
 
   return repo.contarAceitasNoMes(mes);
 }
+
+const SEM_COLETAS = 'sem coletas no mês';
+
+// H4 (Trabalho 3) — "a Marta vê o resultado do mês". Decisões (docs/projeto.md, linha 8):
+// conta pelo mês da publicação; tempo médio em horas com 1 casa decimal; mês sem
+// coleta mostra "sem coletas no mês" (nem zero, nem erro).
+export async function resultadoDoMes(mes) {
+  if (typeof mes !== 'string' || !/^\d{4}-(0[1-9]|1[0-2])$/.test(mes)) {
+    throw new Error('Informe o mês no formato AAAA-MM');
+  }
+
+  const linha = await repo.resultadoDoMes(mes);
+  const horas = linha.tempo_medio_horas;
+  return {
+    mes,
+    publicadas: linha.publicadas,
+    aceitas: linha.aceitas,
+    coletadas: linha.coletadas,
+    devolucoes: linha.devolucoes,
+    tempoMedioAteColetaHoras: horas,
+    tempoMedioAteColeta: horas === null ? SEM_COLETAS : `${String(horas).replace('.', ',')} h`
+  };
+}
