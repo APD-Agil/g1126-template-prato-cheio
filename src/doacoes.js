@@ -53,6 +53,8 @@ export async function listarDisponiveis() {
 // Refatoração 2 (docs/refatoracoes.md) — as transições permitidas (docs/projeto.md,
 // decisão 4) num só lugar. Cada operação diz de que estado parte e com que mensagem
 // recusa; `erroOng` existe quando só a ONG que aceitou pode fazer a operação.
+// Atenção: a presença de `erroOng` é o que LIGA a checagem de dono em transicionar();
+// remover ou renomear essa chave desliga a regra sem nenhum aviso.
 const TRANSICOES = {
   aceitar: {
     de: 'disponivel',
@@ -76,6 +78,7 @@ const TRANSICOES = {
 // com a mesma mensagem da transição proibida.
 async function transicionar(id, operacao, { ong, atualizar }) {
   const transicao = TRANSICOES[operacao];
+  if (!transicao) throw new Error(`Operação desconhecida: ${operacao}`);
 
   const doacao = await repo.buscarPorId(id);
   if (!doacao) {
