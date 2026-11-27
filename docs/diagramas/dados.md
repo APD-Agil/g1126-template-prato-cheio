@@ -1,63 +1,59 @@
 # Diagrama de dados — Prato Cheio
-
-*Pergunta que este diagrama responde:* o que o banco guarda sobre cada doação e como o aceite muda o estado do lote?
-
-A versão original (Aula 7) está em `docs/aulas/Análise e Modelação de SistemaProjeto_ Prato Cheio.pdf`, seção 2. Este diagrama acompanha o schema PostgreSQL atual e a confirmação manual da retirada.
-
+*Pergunta que este diagrama responde:* o que o banco guarda sobre cada doação e como cada
+operação muda o estado do lote?
+A versão original (Aula 7) está em `docs/aulas/Análise e Modelação de SistemaProjeto_
+Prato Cheio.pdf`, seção 2. Este diagrama acompanha o schema que `migrar()` (`src/db.js`)
+cria no PostgreSQL ao fim do Trabalho 3.
 ## Hoje (o que o `src/db.js` cria no PostgreSQL)
-
 ```mermaid
 erDiagram
-    DOACOES {
-        INTEGER id PK "SERIAL"
-        TEXT tipo "NOT NULL"
-        TEXT quantidade "NOT NULL"
-        TEXT validade "NOT NULL"
-        TEXT status "NOT NULL, DEFAULT disponivel"
-        TEXT ong "NULL ate o aceite"
-        TEXT aceita_em "NULL ate o aceite; usado na contagem mensal"
-        TEXT concluida_em "NULL ate a confirmacao da retirada"
-        TEXT criada_em "DEFAULT to_char(now())"
-    }
+DOACOES ||--o{ DEVOLUCOES : "pode ser devolvida"
+DOACOES {
+INTEGER id PK "SERIAL"
+TEXT tipo "NOT NULL"
+TEXT quantidade "NOT NULL"
+TEXT validade "NOT NULL"
+TEXT status "disponivel, aceita ou coletada"
+TEXT doador "H1: quem publicou; padrao nas doacoes antigas"
+TEXT ong "NULL quando disponivel"
+TEXT aceita_em "NULL quando disponivel"
+TEXT voluntario "H2: quem buscou"
+TEXT coletada_em "H2: horario da coleta"
+TEXT concluida_em "legado da Historia 8; copiado para coletada_em"
+TEXT criada_em "horario da publicacao (gerado em JS)"
+}
+DEVOLUCOES {
+INTEGER id PK "SERIAL"
+INTEGER doacao_id FK "ON DELETE CASCADE"
+TEXT ong "quem devolveu"
+TEXT motivo "NOT NULL"
+TEXT devolvida_em "NOT NULL"
+}
 ```
-
-Transição de estados, por `UPDATE` na própria linha (não existe tabela de aceites):
-
+Transições de estado (decisão 4 de `docs/projeto.md`; no código, a tabela `TRANSICOES` em
+`src/doacoes.js`):
 ```mermaid
 stateDiagram-v2
-    [*] --> disponivel: publicar (POST /api/doacoes)
-    disponivel --> aceita: aceitar (UPDATE ... WHERE status = 'disponivel')
-    aceita --> concluida: confirmar retirada (POST /api/doacoes/:id/confirmar-retirada)
+[*] --> disponivel: publicar (POST /api/doacoes)
+disponivel --> aceita: aceitar (UPDATE ... WHERE status = 'disponivel')
+aceita --> coletada: confirmar coleta (POST /api/doacoes/:id/confirmar-coleta)
+aceita --> disponivel: devolver (POST /api/doacoes/:id/devolver)
 ```
-
-`GET /api/doacoes/pendencias?ong=...` lista somente as doações `aceita` da ONG informada. Após a confirmação, `concluida_em` registra o encerramento e a doação passa a aparecer em `GET /api/doacoes/historico?ong=...`.
-
-## Evolução ainda não aplicada
-
-```mermaid
-erDiagram
-    DOACOES {
-        INTEGER id PK "GENERATED ALWAYS AS IDENTITY"
-        TEXT tipo "NOT NULL"
-        TEXT quantidade "NOT NULL"
-        TIMESTAMPTZ validade "CONVERTER DE TEXT"
-        TEXT status "NOT NULL, DEFAULT disponivel"
-        TEXT ong "NULL ate o aceite"
-        TEXT doador "NOVO: quem publicou (contato do link magico)"
-        TIMESTAMPTZ criada_em "CONVERTER DE TEXT"
-        TIMESTAMPTZ aceita_em "CONVERTER DE TEXT"
-        TIMESTAMPTZ concluida_em "CONVERTER DE TEXT"
-    }
-```
-
-`aceita_em` é usado pela rota `GET /api/relatorios/doacoes-aceitas?mes=AAAA-MM`; `concluida_em` registra a confirmação da retirada. Ambos são `TEXT` no schema atual. A coluna `doador` ainda não existe. Converter datas para `TIMESTAMPTZ` e decidir a identidade autenticada da ONG permanecem fora deste incremento.
-
+Qualquer outra transição é recusada com HTTP 400 e a doação não muda. A devolução limpa
+`ong` e `aceita_em` da doação e grava uma linha em `DEVOLUCOES`, na mesma instrução SQL.
+Os horários são `TEXT` no formato `AAAA-MM-DD HH:MM:SS` (UTC), gerados em
+`src/repositorio.js` para que os testes controlem o relógio (H4).
 ## Divergências declaradas
-
 | # | Onde diverge | Diagrama ou documento | Código (`src/`) | O que fazemos |
 |---|---|---|---|---|
-| 1 | Nome do estado após o aceite | Análise (Regra 2) e PDF da Aula 7: `RESERVADO` / `reservado` | `repositorio.js` grava `'aceita'`, e o teste espera `'aceita'` | Mantido `aceita` no código até a Unidade 3. Trocar exige mudar teste, então fica fora da refatoração do banco e entra como decisão própria |
-| 2 | Nome do estado final | Regra 3 e PDF: `CONCLUIDO` | `repositorio.js` grava `concluida` e `concluida_em`; a retirada é restrita à ONG que aceitou | Mantido `concluida` conforme a Fatia 1 em `docs/analise.md`; a confirmação agora está implementada |
-| 3 | Coluna de versão do lock otimista | Decisão de projeto #1: "coluna de versão no lote, `… AND version = X`" | não existe: o `UPDATE` usa só `WHERE status = 'disponivel'` | Para um único campo de estado, a condição no status já garante a exclusividade. A coluna de versão fica sem uso enquanto o lote não tiver outros campos editáveis |
-| 4 | Quem publicou e quando houve aceite/retirada | Conflito 1 e Revisão do ADR 0001: precisa constar na cópia mensal | `aceita_em` e `concluida_em` são preenchidos nos respectivos fluxos; ainda não há `doador` | A identidade do doador segue fora do incremento |
-| 5 | Tipo das datas | Planejado: `TIMESTAMPTZ` | `TEXT` no PostgreSQL atual | A conversão para `TIMESTAMPTZ` segue pendente |
+| 1 | Nome do estado após o aceite | Análise (Regra 2): `RESERVADO` | `aceita` | Mantido
+`aceita`; a correspondência está em `docs/validacao.md` → Mudanças de critério |
+| 2 | Nome do estado final | Regra 3: `CONCLUIDO` | `coletada` (era `concluida` até a H2)
+| `migrar()` converte as linhas antigas; `concluida_em` fica só como legado |
+| 3 | Coluna de versão do lock otimista | Decisão de projeto #1 | não existe: o `UPDATE`
+usa `WHERE status = ...` | A condição no estado já garante a exclusividade (teste de
+concorrência do aceite) |
+| 4 | Identidade de doador e ONG | Conflito 1: token/link mágico | `doador` e `ong` são
+nomes digitados, sem autenticação | Limitação registrada em `docs/validacao.md` |
+| 5 | Tipo das datas | Planejado: `TIMESTAMPTZ` | `TEXT` em UTC | A conversão segue
+pendente; o relatório usa `::timestamp` no SQL |
