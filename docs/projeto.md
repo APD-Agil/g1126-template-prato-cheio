@@ -44,18 +44,19 @@ Quando duas ONGs tentarem aceitar a mesma doação disponível ao mesmo tempo, o
 
 Quando uma pessoa acessar a interface em um celular com viewport de 360 px, o sistema apresentará os campos e controles sem exigir uma página frontend separada, medido pela observação da página com viewport de 360 px e pela configuração `meta viewport` em `public/index.html`. Isso muda a decisão 2 a um custo da equipe, que mantém o layout responsivo na página estática.
 
-Quando `limparBanco()` for chamado com um banco diferente de SQLite em memória, o sistema recusará a limpeza antes de executar o `DELETE`, medido pelo teste em `tests/protecao-banco.test.js`, que também verifica a permanência da doação. Isso muda a decisão 3 a um custo de quem configura e executa os testes, que deve manter `DATABASE_FILE=:memory:` na configuração de teste.
+Quando `limparBanco()` for chamado fora do ambiente de teste, o sistema recusará a limpeza antes de executar o `DELETE`: no PostgreSQL, se `NODE_ENV` não for `test` (valor definido só em `vitest.config.js`); no SQLite legado, se o banco não estiver em memória. O caso SQLite é medido pelo teste em `tests/protecao-banco.test.js`, que também verifica a permanência da doação; a trava do PostgreSQL ainda não tem teste próprio (próximo passo em `docs/refatoracoes.md`). Isso muda a decisão 3 a um custo de quem configura os testes, que deve manter `NODE_ENV=test` só na configuração do Vitest.
 
 ## Critérios de validação do projeto
 
 | # | Critério verificável (sim/não) | Fonte | Resultado no repositório |
 |---|---|---|---|
-| 1 | A conexão usa o módulo nativo `node:sqlite` e as consultas são parametrizadas, sem ORM listado como dependência? | `src/db.js`, `src/repositorio.js`, `package.json` | Sim |
-| 2 | O Vitest configura o banco de testes como SQLite em memória? | `vitest.config.js` | Sim |
-| 3 | Existe teste que comprova que a limpeza de um banco não configurado como memória falha e preserva a doação? | `tests/protecao-banco.test.js` | Sim |
-| 4 | O aceite grava `aceita_em` e a API tem teste BDD para contar os aceites do mês? | `src/db.js`, `src/repositorio.js`, `src/app.js`, `tests/doacoes.test.js` | Sim |
+| 1 | A conexão usa o driver `pg` (PostgreSQL) via `DATABASE_URL` e as consultas são parametrizadas (`$1, $2…`), sem ORM listado como dependência? | `src/db.js`, `src/repositorio.js`, `package.json` | Sim |
+| 2 | Os testes rodam contra PostgreSQL, localmente (`vitest.config.js`) e no CI (serviço `postgres:16-alpine` em `.github/workflows/ci.yml`)? | `vitest.config.js`, `.github/workflows/ci.yml` | Sim |
+| 3 | Existe teste que comprova que a limpeza de um banco que não é de teste falha e preserva a doação? | `tests/protecao-banco.test.js` | Sim (caminho SQLite; o caminho PostgreSQL ainda sem teste) |
+| 4 | O aceite grava `aceita_em` e a API tem teste BDD para contar os aceites do mês? | `src/repositorio.js`, `src/app.js`, `tests/doacoes.test.js` | Sim |
 | 5 | O ADR descreve a migração SQLite → PostgreSQL na Unidade 3, o que deve permanecer igual e o comando de validação? | `docs/adr/0001-migracao-banco.md` → Critério de validação | Sim |
-| 6 | Os links dos diagramas no documento apontam para arquivos existentes e o diagrama de dados reflete o schema atual? | `docs/projeto.md` → Diagramas; `docs/diagramas/contexto.md`; `docs/diagramas/dados.md` | Sim |
+| 6 | Os links dos diagramas no documento apontam para arquivos existentes e o diagrama de dados reflete o schema atual? | `docs/projeto.md` → Diagramas; `docs/diagramas/dados.md` | Sim, após o PR do diagrama (Otavio) |
+| 7 | Os estados e transições da decisão 4 estão no código num só lugar e cada transição proibida tem teste? | `src/doacoes.js` (`TRANSICOES`), `tests/h2-coleta.test.js`, `tests/h3-devolucao.test.js` | Sim |
 
 ## Uso de IA
 

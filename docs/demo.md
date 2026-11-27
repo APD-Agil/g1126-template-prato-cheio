@@ -48,7 +48,9 @@ Para começar com o banco vazio: `docker exec prato-cheio-postgres psql -U prato
 
 _A preencher por um integrante que **não** escreveu este roteiro, depois de executá-lo sozinho, sem ajuda._
 
-- **Quem:**
-- **Quando:**
-- **Aparelho e navegador:**
-- **O que mudou no roteiro depois da execução:**
+- **Quem:** Henrique Osmar Adelino (@hosmar27), que não escreveu este roteiro nem o README. Os passos foram executados pelo Claude (assistente de IA) no navegador do app Claude, com o Henrique acompanhando; não foi uma execução manual sozinho no celular.
+- **Quando:** 26/11/2026, das 22:40 às 22:42 (horário local).
+- **Aparelho e navegador:** notebook macOS, navegador do app Claude em modo responsivo com viewport de **360 px**, acessando `http://192.168.1.7:3000` (IP do notebook na rede). Não foi usado celular físico.
+- **Clone limpo:** clone novo da `main` (`59a1c1f`) numa pasta vazia, seguindo só `## Como rodar` do README: `npm ci`, `npm run db:migrar` ("schema criado"), `npm start`, `/api/saude` respondendo `{"ok":true}` e `npm test` com **42 verdes** (7 arquivos). No macOS foi preciso usar `export DATABASE_URL=...` no lugar do `$env:DATABASE_URL` do PowerShell, que é o único mostrado no README.
+- **Resultado:** passos 1 a 6 executados em cerca de 2 minutos, com o banco vazio (`TRUNCATE doacoes CASCADE`). Todas as mensagens e listas conferiram com o "Resultado esperado". O mês atual mostrou `2026-11: 2 publicadas · 1 aceitas · 1 coletadas · 1 devoluções · tempo médio até a coleta: 0 h`, e o mês vazio (2026-10), `sem coletas no mês`. Em 360 px a página não teve rolagem horizontal.
+- **O que mudou no roteiro depois da execução:** nada nos passos. Duas observações: (1) depois de publicar, os campos do formulário continuam preenchidos, então para publicar o "Bolo" e o "Arroz" é preciso apagar o texto anterior; (2) o horário da coleta aparece em UTC (`01:41:55` quando eram 22:41 no horário local), o que já está nas Limitações de `docs/validacao.md`.
